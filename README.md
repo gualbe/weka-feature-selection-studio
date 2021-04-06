@@ -7,6 +7,14 @@ Idea and supervision by: **Prof. Dr. Gualberto Asencio-Cortés** (final degree t
 
 2021 University of Pablo de Olavide. Seville, Spain
 
+## Installation
+
+1. Open the Package Manager of Weka
+2. Press the button File/URL
+3. Write this address: https://github.com/gualbe/weka-feature-selection-studio/raw/main/fs-studio.zip
+4. Press the OK button
+5. Restart Weka
+
 ## Screenshots
 
 The Experiment panel:
@@ -16,3 +24,9 @@ The Experiment panel:
 The results panel:
 
 ![Results panel](screenshots/fsstudio2.jpg)
+
+## Contact
+
+Please contact with me at [My email](mailto:guaasecor@upo.es) if you have some comments or find some bugs.
+
+Thank you!
