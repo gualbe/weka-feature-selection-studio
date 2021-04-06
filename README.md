@@ -25,7 +25,7 @@ The Experiment panel:
 
 ![Experiment panel](screenshots/fsstudio1.jpg)
 
-The results panel:
+The Results panel:
 
 ![Results panel](screenshots/fsstudio2.jpg)
 
