@@ -1,6 +1,8 @@
 # Weka Feature Selection Studio
 ## A Feature Selection Studio plugin for Weka Explorer
 
+New graphical user interface specifically designed to perform feature selection experiments in Weka Explorer allowing parallel computation. Predicted and actual values are produced in an exportable table, along with the desired attributes values. Moreover, an exportable table of evaluation metrics are also produced, in addition to a customizable bar plot.
+
 Developed by: **Andrés Manuel Chacón Maldonado** (for his final degree work)
 
 Idea and supervision by: **Prof. Dr. Gualberto Asencio-Cortés** (final degree tutor)
