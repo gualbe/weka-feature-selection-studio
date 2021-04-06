@@ -9,6 +9,10 @@ Idea and supervision by: Prof. Dr. Gualberto Asencio-Cortés (final degree tutor
 
 ## Screenshots
 
+The Experiment panel:
+
 ![Experiment panel](screenshots/fsstudio1.jpg)
+
+The results panel:
 
 ![Results panel](screenshots/fsstudio2.jpg)
