@@ -13,7 +13,7 @@ Idea and supervision by: **Prof. Dr. Gualberto Asencio-Cortés** (final degree t
 
 ## Installation
 
-1. Open the Package Manager of Weka
+1. Open the Package Manager of Weka (Tools menu in the first window).
 2. Press the button File/URL
 3. Write this address: https://github.com/gualbe/weka-feature-selection-studio/raw/main/fs-studio.zip
 4. Press the OK button
