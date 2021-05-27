@@ -65,29 +65,29 @@ public class ScriptRunner {
         this.connection = connection;
         this.autoCommit = autoCommit;
         this.stopOnError = stopOnError;
-        File logFile = new File("create_db.log");
-        File errorLogFile = new File("create_db_error.log");
-        try {
-            if (logFile.exists()) {
-                logWriter = new PrintWriter(new FileWriter(logFile, true));
-            } else {
-                logWriter = new PrintWriter(new FileWriter(logFile, false));
-            }
-        } catch (IOException e) {
-            System.err.println("Unable to access or create the db_create log");
-        }
-        try {
-            if (errorLogFile.exists()) {
-                errorLogWriter = new PrintWriter(new FileWriter(errorLogFile, true));
-            } else {
-                errorLogWriter = new PrintWriter(new FileWriter(errorLogFile, false));
-            }
-        } catch (IOException e) {
-            System.err.println("Unable to access or create the db_create error log");
-        }
-        String timeStamp = new SimpleDateFormat("dd/mm/yyyy HH:mm:ss").format(new java.util.Date());
-        println("\n-------\n" + timeStamp + "\n-------\n");
-        printlnError("\n-------\n" + timeStamp + "\n-------\n");
+//        File logFile = new File("create_db.log");
+//        File errorLogFile = new File("create_db_error.log");
+//        try {
+//            if (logFile.exists()) {
+//                logWriter = new PrintWriter(new FileWriter(logFile, true));
+//            } else {
+//                logWriter = new PrintWriter(new FileWriter(logFile, false));
+//            }
+//        } catch (IOException e) {
+//            System.err.println("Unable to access or create the db_create log");
+//        }
+//        try {
+//            if (errorLogFile.exists()) {
+//                errorLogWriter = new PrintWriter(new FileWriter(errorLogFile, true));
+//            } else {
+//                errorLogWriter = new PrintWriter(new FileWriter(errorLogFile, false));
+//            }
+//        } catch (IOException e) {
+//            System.err.println("Unable to access or create the db_create error log");
+//        }
+//        String timeStamp = new SimpleDateFormat("dd/mm/yyyy HH:mm:ss").format(new java.util.Date());
+//        println("\n-------\n" + timeStamp + "\n-------\n");
+//        printlnError("\n-------\n" + timeStamp + "\n-------\n");
     }
 
     public void setDelimiter(String delimiter, boolean fullLineDelimiter) {

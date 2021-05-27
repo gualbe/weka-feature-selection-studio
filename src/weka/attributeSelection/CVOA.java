@@ -166,7 +166,7 @@ public class CVOA extends ASSearch implements OptionHandler, StartSetHandler {
         
         if(socialDistancingInt == null){
             socialDistancingInt = new int[numStrains];
-            defaultValuesInt(socialDistancingInt, 7);
+            defaultValuesInt(socialDistancingInt, 3);
         }
         
         double[] pIsolationDouble = stringToArrayDouble(pIsolation, "pIsolation");
@@ -417,7 +417,7 @@ public class CVOA extends ASSearch implements OptionHandler, StartSetHandler {
         maxSpread = "5";
         minSuperspread = "6";
         maxSuperspread = "15";
-        socialDistancing = "7";
+        socialDistancing = "3";
         pIsolation = "0.7";
         pTravel = "0.1";
         pReinfection = "0.02";

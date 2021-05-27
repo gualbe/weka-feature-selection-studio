@@ -37,10 +37,11 @@ public class SearchEvaluatorAndClassifier implements Callable<ResultsAttrSelExp>
     private final Classifier classifier;
     private final JProgressBar progressBar;
     private final int percentThreads;
+    private final boolean selectedPreserveOrder;
 
     public SearchEvaluatorAndClassifier(Logger m_Log, Instances inst, int testMode, int numFolds, int seed, int classIndex, 
             double percent, ASEvaluation evaluator, ASSearch search, Classifier classifier, 
-            JProgressBar progressBar, int pThreads) throws Exception {
+            JProgressBar progressBar, int pThreads, boolean selectedPreserveOrder) throws Exception {
         this.log = m_Log;
         this.inst = new Instances(inst);
         this.testMode = testMode;
@@ -60,6 +61,7 @@ public class SearchEvaluatorAndClassifier implements Callable<ResultsAttrSelExp>
         this.classifier = AbstractClassifier.makeCopy(classifier);
         this.progressBar = progressBar;
         this.percentThreads = pThreads;
+        this.selectedPreserveOrder = selectedPreserveOrder;
     }
     
     public ResultsAttrSelExp run() {
@@ -81,8 +83,11 @@ public class SearchEvaluatorAndClassifier implements Callable<ResultsAttrSelExp>
         try{
             switch (testMode) {
                 case 0: // Hold-out mode
-                    random = new Random(seed);
-                    inst.randomize(random);
+                    if(!selectedPreserveOrder){
+                        random = new Random(seed);
+                        inst.randomize(random);
+                    }
+                    
                     int trainSize = (int) Math.round(inst.numInstances() * percent / 100);
                     int testSize = inst.numInstances() - trainSize;
                     

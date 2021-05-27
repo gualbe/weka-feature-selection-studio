@@ -108,6 +108,7 @@ import org.jfree.chart.plot.PlotOrientation;
 import org.jfree.data.category.DefaultCategoryDataset;
 import weka.core.converters.ConverterUtils;
 import weka.core.converters.ConverterUtils.DataSink;
+import weka.core.converters.ConverterUtils.DataSource;
 import weka.core.converters.DatabaseSaver;
 
 /**
@@ -126,7 +127,7 @@ public class AttrSelExp extends javax.swing.JPanel implements Explorer.ExplorerP
     /**
     * The main set of instances we're playing with
     */
-    protected List<Instances> listIntances;
+    protected List<Instances> listInstances;
 
     /*
     * Where the evaluators, search algorithms and classifier are saved to be loaded
@@ -242,7 +243,7 @@ public class AttrSelExp extends javax.swing.JPanel implements Explorer.ExplorerP
         classifierList.setModel(classifierListModel);
         
         //other attributes for save things
-        listIntances = new ArrayList<>();
+        listInstances = new ArrayList<>();
         listEvaluators = new ArrayList<>();
         listSearchAlgorithms = new ArrayList<>();
         listClassifier = new ArrayList<>();
@@ -272,9 +273,9 @@ public class AttrSelExp extends javax.swing.JPanel implements Explorer.ExplorerP
         experiment = new javax.swing.JPanel();
         datasets = new javax.swing.JPanel();
         addFileBtn = new javax.swing.JButton();
+        addFolderBtn = new javax.swing.JButton();
         datasetsScrollPane = new javax.swing.JScrollPane();
         datasetsTable = new javax.swing.JTable();
-        actionsDatasetsLabel = new javax.swing.JLabel();
         loadBtnDataset = new javax.swing.JButton();
         removeBtnDataset = new javax.swing.JButton();
         selectionClassCombo = new javax.swing.JComboBox<>();
@@ -309,6 +310,7 @@ public class AttrSelExp extends javax.swing.JPanel implements Explorer.ExplorerP
         crossValidationTextField = new javax.swing.JTextField();
         crossValidationLabel = new javax.swing.JLabel();
         leaveOneOutBtn = new javax.swing.JRadioButton();
+        preserveOrderCheckbox = new javax.swing.JCheckBox();
         runPanel = new javax.swing.JPanel();
         progressExp = new javax.swing.JProgressBar();
         runExpBtn = new javax.swing.JButton();
@@ -392,8 +394,20 @@ public class AttrSelExp extends javax.swing.JPanel implements Explorer.ExplorerP
         gridBagConstraints.gridx = 0;
         gridBagConstraints.gridy = 0;
         gridBagConstraints.anchor = java.awt.GridBagConstraints.NORTHWEST;
-        gridBagConstraints.weightx = 1.0;
         datasets.add(addFileBtn, gridBagConstraints);
+
+        addFolderBtn.setText("Add folder...");
+        addFolderBtn.addActionListener(new java.awt.event.ActionListener() {
+            public void actionPerformed(java.awt.event.ActionEvent evt) {
+                addFolderBtnActionPerformed(evt);
+            }
+        });
+        gridBagConstraints = new java.awt.GridBagConstraints();
+        gridBagConstraints.gridx = 1;
+        gridBagConstraints.gridy = 0;
+        gridBagConstraints.anchor = java.awt.GridBagConstraints.WEST;
+        gridBagConstraints.weightx = 1.0;
+        datasets.add(addFolderBtn, gridBagConstraints);
 
         datasetsTable.setModel(new javax.swing.table.DefaultTableModel(
             new Object [][] {
@@ -428,17 +442,10 @@ public class AttrSelExp extends javax.swing.JPanel implements Explorer.ExplorerP
         gridBagConstraints = new java.awt.GridBagConstraints();
         gridBagConstraints.gridx = 0;
         gridBagConstraints.gridy = 1;
-        gridBagConstraints.gridwidth = 8;
+        gridBagConstraints.gridwidth = 9;
         gridBagConstraints.fill = java.awt.GridBagConstraints.BOTH;
         gridBagConstraints.weighty = 1.0;
         datasets.add(datasetsScrollPane, gridBagConstraints);
-
-        actionsDatasetsLabel.setText("Actions: ");
-        gridBagConstraints = new java.awt.GridBagConstraints();
-        gridBagConstraints.gridx = 1;
-        gridBagConstraints.gridy = 0;
-        gridBagConstraints.anchor = java.awt.GridBagConstraints.EAST;
-        datasets.add(actionsDatasetsLabel, gridBagConstraints);
 
         loadBtnDataset.setText("Load");
         loadBtnDataset.setToolTipText("Load the selected row of the table in the tab Preprocess");
@@ -448,7 +455,7 @@ public class AttrSelExp extends javax.swing.JPanel implements Explorer.ExplorerP
             }
         });
         gridBagConstraints = new java.awt.GridBagConstraints();
-        gridBagConstraints.gridx = 2;
+        gridBagConstraints.gridx = 3;
         gridBagConstraints.gridy = 0;
         datasets.add(loadBtnDataset, gridBagConstraints);
 
@@ -460,7 +467,7 @@ public class AttrSelExp extends javax.swing.JPanel implements Explorer.ExplorerP
             }
         });
         gridBagConstraints = new java.awt.GridBagConstraints();
-        gridBagConstraints.gridx = 3;
+        gridBagConstraints.gridx = 4;
         gridBagConstraints.gridy = 0;
         datasets.add(removeBtnDataset, gridBagConstraints);
 
@@ -473,7 +480,7 @@ public class AttrSelExp extends javax.swing.JPanel implements Explorer.ExplorerP
             }
         });
         gridBagConstraints = new java.awt.GridBagConstraints();
-        gridBagConstraints.gridx = 5;
+        gridBagConstraints.gridx = 6;
         gridBagConstraints.gridy = 0;
         gridBagConstraints.fill = java.awt.GridBagConstraints.BOTH;
         gridBagConstraints.weightx = 1.0;
@@ -488,7 +495,7 @@ public class AttrSelExp extends javax.swing.JPanel implements Explorer.ExplorerP
             }
         });
         gridBagConstraints = new java.awt.GridBagConstraints();
-        gridBagConstraints.gridx = 7;
+        gridBagConstraints.gridx = 8;
         gridBagConstraints.gridy = 0;
         gridBagConstraints.fill = java.awt.GridBagConstraints.BOTH;
         gridBagConstraints.weightx = 1.0;
@@ -496,14 +503,14 @@ public class AttrSelExp extends javax.swing.JPanel implements Explorer.ExplorerP
 
         classDatasetsLabel.setText("Class: ");
         gridBagConstraints = new java.awt.GridBagConstraints();
-        gridBagConstraints.gridx = 4;
+        gridBagConstraints.gridx = 5;
         gridBagConstraints.gridy = 0;
         gridBagConstraints.anchor = java.awt.GridBagConstraints.EAST;
         datasets.add(classDatasetsLabel, gridBagConstraints);
 
         positiveClassDatasetsLabel.setText("Positive class: ");
         gridBagConstraints = new java.awt.GridBagConstraints();
-        gridBagConstraints.gridx = 6;
+        gridBagConstraints.gridx = 7;
         gridBagConstraints.gridy = 0;
         gridBagConstraints.anchor = java.awt.GridBagConstraints.EAST;
         datasets.add(positiveClassDatasetsLabel, gridBagConstraints);
@@ -648,7 +655,7 @@ experiment.add(featureSelection, gridBagConstraints);
 
 classifier.setLayout(new java.awt.GridBagLayout());
 
-classifierLabel.setText("Classifier:");
+classifierLabel.setText("Classifiers:");
 gridBagConstraints = new java.awt.GridBagConstraints();
 gridBagConstraints.gridx = 0;
 gridBagConstraints.gridy = 0;
@@ -820,6 +827,14 @@ gridBagConstraints.gridx = 0;
 gridBagConstraints.gridy = 2;
 gridBagConstraints.anchor = java.awt.GridBagConstraints.WEST;
 validation.add(leaveOneOutBtn, gridBagConstraints);
+
+preserveOrderCheckbox.setText("Preserve order for % split");
+gridBagConstraints = new java.awt.GridBagConstraints();
+gridBagConstraints.gridx = 3;
+gridBagConstraints.gridy = 0;
+gridBagConstraints.anchor = java.awt.GridBagConstraints.WEST;
+gridBagConstraints.weightx = 1.0;
+validation.add(preserveOrderCheckbox, gridBagConstraints);
 
 validation.setBorder(BorderFactory.createCompoundBorder(
     BorderFactory.createTitledBorder("Validation"),
@@ -1151,6 +1166,7 @@ metricsTable.setModel(new javax.swing.table.DefaultTableModel(
             return canEdit [columnIndex];
         }
     });
+    metricsTable.setToolTipText("The data in the numAttributes column of the metrics table is obtained by filtering the entire dataset if the CV or LVO validation method has been chosen.");
     metricsTable.setAutoResizeMode(javax.swing.JTable.AUTO_RESIZE_OFF);
     metricsScrollPane.setViewportView(metricsTable);
 
@@ -1521,27 +1537,49 @@ attrSelExpTabs.addTab("Results", results);
 }// </editor-fold>//GEN-END:initComponents
 
     private void addFileBtnActionPerformed(java.awt.event.ActionEvent evt) {//GEN-FIRST:event_addFileBtnActionPerformed
-        m_Instances.setClassIndex(m_Instances.numAttributes() - 1);
-                
-        datasetsTableModel.addRow(new Object[]{m_Instances.relationName(), m_Instances.numInstances(), 
-            m_Instances.numAttributes() - 1, m_Instances.numClasses(), m_Instances.attribute(m_Instances.numAttributes() - 1).name(), 
-            m_Instances.attribute(m_Instances.classIndex()).value(0)});
+        m_Log.statusMessage("OK");
         
-        listIntances.add(m_Instances);
-        listClassPositive.add(0);
-        
-        checkRun();
+        if(m_Instances != null){
+            m_Instances.setClassIndex(m_Instances.numAttributes() - 1);
+
+            datasetsTableModel.addRow(new Object[]{m_Instances.relationName(), m_Instances.numInstances(), 
+                m_Instances.numAttributes() - 1, m_Instances.numClasses(), m_Instances.attribute(m_Instances.numAttributes() - 1).name(), 
+                m_Instances.attribute(m_Instances.classIndex()).value(0)});
+
+            listInstances.add(m_Instances);
+            listClassPositive.add(0);
+                        
+            checkRun();
+        }else{
+            m_Log.logMessage("There is no dataset previously loaded");
+            m_Log.statusMessage("See error log");
+        }
     }//GEN-LAST:event_addFileBtnActionPerformed
 
     private void removeBtnDatasetActionPerformed(java.awt.event.ActionEvent evt) {//GEN-FIRST:event_removeBtnDatasetActionPerformed
-        listIntances.remove(datasetsTable.getSelectedRow());
-        listClassPositive.remove(datasetsTable.getSelectedRow());
-        datasetsTableModel.removeRow(datasetsTable.getSelectedRow());
-        checkRun();
+        m_Log.statusMessage("OK");
+        
+        if(datasetsTable.getSelectedRow() != -1){
+            listInstances.remove(datasetsTable.getSelectedRow());
+            listClassPositive.remove(datasetsTable.getSelectedRow());
+            datasetsTableModel.removeRow(datasetsTable.getSelectedRow());
+            
+            checkRun();
+        }else{
+            m_Log.logMessage("No row is selected");
+            m_Log.statusMessage("See error log");
+        }
     }//GEN-LAST:event_removeBtnDatasetActionPerformed
 
     private void loadBtnDatasetActionPerformed(java.awt.event.ActionEvent evt) {//GEN-FIRST:event_loadBtnDatasetActionPerformed
-        getExplorer().getPreprocessPanel().setInstances(listIntances.get(datasetsTable.getSelectedRow()));
+        m_Log.statusMessage("OK");
+        
+        if(datasetsTable.getSelectedRow() != -1){
+            getExplorer().getPreprocessPanel().setInstances(listInstances.get(datasetsTable.getSelectedRow()));
+        }else{
+            m_Log.logMessage("No row is selected");
+            m_Log.statusMessage("See error log");
+        }
     }//GEN-LAST:event_loadBtnDatasetActionPerformed
 
     private void addFeatureBtnActionPerformed(java.awt.event.ActionEvent evt) {//GEN-FIRST:event_addFeatureBtnActionPerformed
@@ -1558,29 +1596,59 @@ attrSelExpTabs.addTab("Results", results);
     }//GEN-LAST:event_addClassifierBtnActionPerformed
 
     private void removeBtnFeatureActionPerformed(java.awt.event.ActionEvent evt) {//GEN-FIRST:event_removeBtnFeatureActionPerformed
-        listEvaluators.remove(featuresTable.getSelectedRow());
-        listSearchAlgorithms.remove(featuresTable.getSelectedRow());
-        featuresTableModel.removeRow(featuresTable.getSelectedRow());
-        checkRun();
+        m_Log.statusMessage("OK");
+        
+        if(featuresTable.getSelectedRow() != -1){
+            listEvaluators.remove(featuresTable.getSelectedRow());
+            listSearchAlgorithms.remove(featuresTable.getSelectedRow());
+            featuresTableModel.removeRow(featuresTable.getSelectedRow());
+            
+            checkRun();
+        }else{
+            m_Log.logMessage("No row is selected");
+            m_Log.statusMessage("See error log");
+        }
     }//GEN-LAST:event_removeBtnFeatureActionPerformed
 
     private void loadBtnFeatureActionPerformed(java.awt.event.ActionEvent evt) {//GEN-FIRST:event_loadBtnFeatureActionPerformed
-        m_AttributeSearchEditor.setValue(listSearchAlgorithms.get(featuresTable.getSelectedRow()));
-        m_AttributeEvaluatorEditor.setValue(listEvaluators.get(featuresTable.getSelectedRow()));
+        m_Log.statusMessage("OK");
+        
+        if(featuresTable.getSelectedRow() != -1){
+            m_AttributeSearchEditor.setValue(listSearchAlgorithms.get(featuresTable.getSelectedRow()));
+            m_AttributeEvaluatorEditor.setValue(listEvaluators.get(featuresTable.getSelectedRow()));
+        }else{
+            m_Log.logMessage("No row is selected");
+            m_Log.statusMessage("See error log");
+        }
     }//GEN-LAST:event_loadBtnFeatureActionPerformed
 
     private void loadBtnClassifierActionPerformed(java.awt.event.ActionEvent evt) {//GEN-FIRST:event_loadBtnClassifierActionPerformed
-        m_ClassifierEditor.setValue(listClassifier.get(classifierTable.getSelectedRow()));
+        m_Log.statusMessage("OK");
+        
+        if(classifierTable.getSelectedRow() != -1){
+            m_ClassifierEditor.setValue(listClassifier.get(classifierTable.getSelectedRow()));
+        }else{
+            m_Log.logMessage("No row is selected");
+            m_Log.statusMessage("See error log");
+        }
     }//GEN-LAST:event_loadBtnClassifierActionPerformed
 
     private void removeBtnClassifierActionPerformed(java.awt.event.ActionEvent evt) {//GEN-FIRST:event_removeBtnClassifierActionPerformed
-        listClassifier.remove(classifierTable.getSelectedRow());
-        classifierTableModel.removeRow(classifierTable.getSelectedRow());
-        checkRun();
+        m_Log.statusMessage("OK");
+        
+        if(classifierTable.getSelectedRow() != -1){
+            listClassifier.remove(classifierTable.getSelectedRow());
+            classifierTableModel.removeRow(classifierTable.getSelectedRow());
+            
+            checkRun();
+        }else{
+            m_Log.logMessage("No row is selected");
+            m_Log.statusMessage("See error log");
+        }
     }//GEN-LAST:event_removeBtnClassifierActionPerformed
 
     private void datasetsTableMouseClicked(java.awt.event.MouseEvent evt) {//GEN-FIRST:event_datasetsTableMouseClicked
-        Instances inst = listIntances.get(datasetsTable.getSelectedRow());
+        Instances inst = listInstances.get(datasetsTable.getSelectedRow());
         String[] attribNames = new String[inst.numAttributes()];
 
         for (int i = 0; i < inst.numAttributes(); i++) {
@@ -1613,7 +1681,7 @@ attrSelExpTabs.addTab("Results", results);
     }//GEN-LAST:event_datasetsTableMouseClicked
 
     private void selectionClassComboItemStateChanged(java.awt.event.ItemEvent evt) {//GEN-FIRST:event_selectionClassComboItemStateChanged
-        Instances inst = listIntances.get(datasetsTable.getSelectedRow());
+        Instances inst = listInstances.get(datasetsTable.getSelectedRow());
 
         inst.setClassIndex(selectionClassCombo.getSelectedIndex());
 
@@ -1660,7 +1728,7 @@ attrSelExpTabs.addTab("Results", results);
         if (progressExp.getValue() != 0) {
             progressExp.setValue(0);
         } 
-        
+
         //to avoid interface blocking
         worker = new SwingWorker(){
             @Override
@@ -1899,7 +1967,7 @@ attrSelExpTabs.addTab("Results", results);
     }//GEN-LAST:event_updatePredictionsBtnActionPerformed
 
     private void selectionPositiveClassComboItemStateChanged(java.awt.event.ItemEvent evt) {//GEN-FIRST:event_selectionPositiveClassComboItemStateChanged
-        Instances inst = listIntances.get(datasetsTable.getSelectedRow());
+        Instances inst = listInstances.get(datasetsTable.getSelectedRow());
         
         listClassPositive.set(datasetsTable.getSelectedRow(), selectionPositiveClassCombo.getSelectedIndex());
         
@@ -2212,6 +2280,40 @@ attrSelExpTabs.addTab("Results", results);
         loadBBDD();
     }//GEN-LAST:event_loadBBDDBtnActionPerformed
 
+    private void addFolderBtnActionPerformed(java.awt.event.ActionEvent evt) {//GEN-FIRST:event_addFolderBtnActionPerformed
+        String initialDir = ExplorerDefaults.getInitialDirectory();
+        ConverterFileChooser m_FileChooser = new ConverterFileChooser(new File(initialDir));
+        Instances instances;
+        m_FileChooser.setFileSelectionMode(JFileChooser.DIRECTORIES_ONLY);
+        int returnVal = m_FileChooser.showOpenDialog(this);
+        
+        if (returnVal == JFileChooser.APPROVE_OPTION) {
+        
+            File [] files = m_FileChooser.getSelectedFile().listFiles();
+            for (File file : files) {
+                try {
+                    instances = DataSource.read(file.toString());
+                    addInstancesToDatasetList(instances, 1);
+                } catch (Exception ex) {
+                    Logger.getLogger(AttrSelExp.class.getName()).log(Level.SEVERE, null, ex);
+                }
+            }            
+        }
+    }//GEN-LAST:event_addFolderBtnActionPerformed
+
+    private void addInstancesToDatasetList (Instances dataset, int positiveClass) {
+        dataset.setClassIndex(dataset.numAttributes() - 1);
+
+        datasetsTableModel.addRow(new Object[]{dataset.relationName(), dataset.numInstances(), 
+            dataset.numAttributes() - 1, dataset.numClasses(), dataset.attribute(dataset.numAttributes() - 1).name(), 
+            dataset.attribute(dataset.classIndex()).value(positiveClass)});
+
+        listInstances.add(dataset);
+        listClassPositive.add(positiveClass);
+
+        checkRun();
+    }
+    
     public static String getSpec(Object object) {
         if (object instanceof OptionHandler) {
             return object.getClass().getSimpleName() + " "
@@ -2222,7 +2324,7 @@ attrSelExpTabs.addTab("Results", results);
     }
     
     private void checkRun() {
-        if (!listIntances.isEmpty() && !listClassifier.isEmpty()) {
+        if (!listInstances.isEmpty() && !listClassifier.isEmpty()) {
             runExpBtn.setEnabled(true);
         }else{
             runExpBtn.setEnabled(false);
@@ -2310,15 +2412,13 @@ attrSelExpTabs.addTab("Results", results);
             completePredictionPanel();
             completeMetricsTable();
             completeGraphComboBox();
-            JOptionPane.showMessageDialog(null, "The data in the numAttributes column of the metrics table "
-                + "is obtained by filtering the entire dataset if the CV or LVO validation method has been chosen.");
         }
     }
     
     private void completePredictionPanel() throws InterruptedException, ExecutionException{
         //complete list of datasets
-        for(int d = 0; d < listIntances.size(); d++){
-            datasetsListModel.addElement(listIntances.get(d).relationName());
+        for(int d = 0; d < listInstances.size(); d++){
+            datasetsListModel.addElement(listInstances.get(d).relationName());
         }
         
         //complete lists of evaluators and searchs, have same size
@@ -2397,7 +2497,7 @@ attrSelExpTabs.addTab("Results", results);
         xAxis1ComboBox.setSelectedIndex(1);
         xAxis2ComboBox.setSelectedIndex(2);
         
-        if(listIntances.get(0).classAttribute().isNominal()){
+        if(listInstances.get(0).classAttribute().isNominal()){
             metricGraphComboBox.setSelectedIndex(0);
         }else{
             metricGraphComboBox.setSelectedIndex(7);
@@ -2471,8 +2571,8 @@ attrSelExpTabs.addTab("Results", results);
         boolean found = false;
         int j = 0;
 
-        while(j < listIntances.size() && !found){
-            if(listIntances.get(j).relationName().equals(instLost.relationName())){
+        while(j < listInstances.size() && !found){
+            if(listInstances.get(j).relationName().equals(instLost.relationName())){
                 found = true;
             }
             j++;
@@ -2557,7 +2657,7 @@ attrSelExpTabs.addTab("Results", results);
                 if(evalResult.predictions() != null){
                     try{
                         int index = foundInstances(objectResult.get().getInst());
-                        recall.add(evalResult.recall(index));
+                        recall.add(evalResult.recall(listClassPositive.get(index)));
                     } catch(Exception ex){
                         recall.add(null);
                         m_Log.logMessage("With " + objectResult.get().getInst().relationName() + ", " + 
@@ -2588,7 +2688,7 @@ attrSelExpTabs.addTab("Results", results);
                 if(evalResult.predictions() != null){
                     try{
                         int index = foundInstances(objectResult.get().getInst());
-                        fMeasure.add(evalResult.fMeasure(index));
+                        fMeasure.add(evalResult.fMeasure(listClassPositive.get(index)));
                     } catch(Exception ex){
                         fMeasure.add(null);
                         m_Log.logMessage("With " + objectResult.get().getInst().relationName() + ", " + 
@@ -2649,7 +2749,7 @@ attrSelExpTabs.addTab("Results", results);
                 if(evalResult.predictions() != null){
                     try{
                         int index = foundInstances(objectResult.get().getInst());
-                        mcc.add(evalResult.matthewsCorrelationCoefficient(index));
+                        mcc.add(evalResult.matthewsCorrelationCoefficient(listClassPositive.get(index)));
                     } catch(Exception ex){
                         mcc.add(null);
                         m_Log.logMessage("With " + objectResult.get().getInst().relationName() + ", " + 
@@ -2680,7 +2780,7 @@ attrSelExpTabs.addTab("Results", results);
                 if(evalResult.predictions() != null){
                     try{
                         int index = foundInstances(objectResult.get().getInst());
-                        auc.add(evalResult.areaUnderROC(index));
+                        auc.add(evalResult.areaUnderROC(listClassPositive.get(index)));
                     } catch(Exception ex){
                         auc.add(null);
                         m_Log.logMessage("With " + objectResult.get().getInst().relationName() + ", " + 
@@ -2859,7 +2959,10 @@ attrSelExpTabs.addTab("Results", results);
         for(int i = 0; i < tableModel.getColumnCount(); i++){
             Attribute a = null;
 
-            if(tableModel.getColumnName(i).equals("Actual value") || tableModel.getColumnName(i).equals("Predicted value")){
+            if(tableModel.getColumnName(i).equals("Actual value") || tableModel.getColumnName(i).equals("Predicted value") || tableModel.getColumnName(i).equals("Accuracy") || tableModel.getColumnName(i).equals("NumAttributes") || 
+                tableModel.getColumnName(i).equals("Precision") || tableModel.getColumnName(i).equals("Recall") || tableModel.getColumnName(i).equals("F-measure") || tableModel.getColumnName(i).equals("Kappa") ||
+                tableModel.getColumnName(i).equals("MCC") || tableModel.getColumnName(i).equals("AUC") || tableModel.getColumnName(i).equals("MAE") || tableModel.getColumnName(i).equals("MSE") || tableModel.getColumnName(i).equals("RMSE") ||
+                tableModel.getColumnName(i).equals("MAPE") || tableModel.getColumnName(i).equals("R2")){
                 a = new Attribute(tableModel.getColumnName(i));
             }else{
                 a = new Attribute(tableModel.getColumnName(i), (ArrayList<String>) null);
@@ -2937,7 +3040,8 @@ attrSelExpTabs.addTab("Results", results);
         if (returnVal == JFileChooser.APPROVE_OPTION) {
             File f = new File(fileChooser.getSelectedFile() + ".png");
             try {
-                ChartUtilities.saveChartAsPNG(f, chart, 600, 400);
+                //ChartUtilities.saveChartAsPNG(f, chart, 600, 400);
+                ChartUtilities.saveChartAsPNG(f, chart, 1280, 720);
             } catch (IOException ex) {
                 Logger.getLogger(AttrSelExp.class.getName()).log(Level.SEVERE, null, ex);
             }
@@ -2955,10 +3059,11 @@ attrSelExpTabs.addTab("Results", results);
         if (returnVal == JFileChooser.APPROVE_OPTION) {
             File f = new File(fileChooser.getSelectedFile() + ".pdf");
             PDFDocument pdfDoc = new PDFDocument();
-            Page page = pdfDoc.createPage(new Rectangle(600, 400));
+            
+            Page page = pdfDoc.createPage(new Rectangle(1280, 720));
             PDFGraphics2D g2 = page.getGraphics2D();
             
-            chart.draw(g2, new Rectangle(0, 0, 600, 400));
+            chart.draw(g2, new Rectangle(0, 0, 1280, 720));
             pdfDoc.writeToFile(f);
         }
     }
@@ -2967,9 +3072,9 @@ attrSelExpTabs.addTab("Results", results);
         Properties p = new Properties();
         
         try {
-            p.load(new FileReader("C:/Users/Usuario/wekafiles/packages/FeatureSelectionStudio/DatabaseUtils.props"));
+            p.load(new FileReader("C:/Users/Usuario/wekafiles/packages/FS-Studio/DatabaseUtils.props"));
         } catch (IOException ex) {
-            m_Log.logMessage(ex.getMessage());
+            m_Log.logMessage("The properties file cannot be read");
             m_Log.statusMessage("See error log");
         }
         
@@ -2978,7 +3083,7 @@ attrSelExpTabs.addTab("Results", results);
         try {
            Class.forName(driver);
         } catch (ClassNotFoundException ex){
-           m_Log.logMessage(ex.getMessage());
+           m_Log.logMessage("Driver not found");
            m_Log.statusMessage("See error log");
         }
         
@@ -2995,15 +3100,15 @@ attrSelExpTabs.addTab("Results", results);
                 ResultSet rs = st.executeQuery("SELECT * FROM attrselexp.experiment_group");
             } catch (SQLException sqle) { 
                 ScriptRunner runner = new ScriptRunner(conn, false, false);
-                String file = "C:/Users/Usuario/wekafiles/packages/FeatureSelectionStudio/DB/DB.sql";
+                String file = "C:/Users/Usuario/wekafiles/packages/FS-Studio/DB/DB.sql";
                 try {
                     runner.runScript(new BufferedReader(new FileReader(file)));
                 } catch (IOException ex) {
-                    Logger.getLogger(AttrSelExp.class.getName()).log(Level.SEVERE, null, ex);
+                    m_Log.logMessage("No connection to the database");
                 }
             }
         } catch (SQLException ex) {
-            m_Log.logMessage(ex.getMessage());
+            m_Log.logMessage("No connection to the database");
             m_Log.statusMessage("See error log");
         }
     }
@@ -3014,9 +3119,9 @@ attrSelExpTabs.addTab("Results", results);
             Properties p = new Properties();
 
             try {
-                p.load(new FileReader("C:/Users/Usuario/wekafiles/packages/FeatureSelectionStudio/DatabaseUtils.props"));
+                p.load(new FileReader("C:/Users/Usuario/wekafiles/packages/FS-Studio/DatabaseUtils.props"));
             } catch (IOException ex) {
-                m_Log.logMessage(ex.getMessage());
+                m_Log.logMessage("The properties file cannot be read");
                 m_Log.statusMessage("See error log");
             }
 
@@ -3025,7 +3130,7 @@ attrSelExpTabs.addTab("Results", results);
             try {
                Class.forName(driver);
             } catch (ClassNotFoundException ex){
-               m_Log.logMessage(ex.getMessage());
+               m_Log.logMessage("Driver not found");
                m_Log.statusMessage("See error log");
             }
 
@@ -3044,7 +3149,7 @@ attrSelExpTabs.addTab("Results", results);
                         st.executeUpdate("INSERT INTO experiment_group (datetime) VALUES ('"+dtf.format(LocalDateTime.now())+"')");
                     } catch(Exception ex){
                         ScriptRunner runner = new ScriptRunner(conn, false, false);
-                        String file = "C:/Users/Usuario/wekafiles/packages/FeatureSelectionStudio/DB/experiment_group.sql";
+                        String file = "C:/Users/Usuario/wekafiles/packages/FS-Studio/DB/experiment_group.sql";
                         
                         try {
                             runner.runScript(new BufferedReader(new FileReader(file)));
@@ -3111,7 +3216,7 @@ attrSelExpTabs.addTab("Results", results);
                             + "VALUES ('"+id+"','"+dt+"','"+eval+"','"+search+"','"+cls+"')");
                         } catch(Exception ex){
                             ScriptRunner runner = new ScriptRunner(conn, false, false);
-                            String file = "C:/Users/Usuario/wekafiles/packages/FeatureSelectionStudio/DB/experiment.sql";
+                            String file = "C:/Users/Usuario/wekafiles/packages/FS-Studio/DB/experiment.sql";
                             try {
                                 runner.runScript(new BufferedReader(new FileReader(file)));
                                 
@@ -3137,7 +3242,7 @@ attrSelExpTabs.addTab("Results", results);
                                     "','"+mape.get(i)+"','"+r2.get(i)+"')");
                         } catch(Exception ex){
                             ScriptRunner runner = new ScriptRunner(conn, false, false);
-                            String file = "C:/Users/Usuario/wekafiles/packages/FeatureSelectionStudio/DB/metrics.sql";
+                            String file = "C:/Users/Usuario/wekafiles/packages/FS-Studio/DB/metrics.sql";
                             try {
                                 runner.runScript(new BufferedReader(new FileReader(file)));
                                 
@@ -3222,7 +3327,7 @@ attrSelExpTabs.addTab("Results", results);
                                         + "VALUES ('"+idExp+"','"+valuesPredict.get(z).actual()+"','"+valuesPredict.get(z).predicted()+"','"+dt+"','"+eval+"','"+search+"','"+cls+"','"+data.get(z)+"','"+dataIndexAttrSel.get(z)+"')");
                                     } catch(Exception ex){
                                         ScriptRunner runner = new ScriptRunner(conn, false, false);
-                                        String file = "C:/Users/Usuario/wekafiles/packages/FeatureSelectionStudio/DB/predictions.sql";
+                                        String file = "C:/Users/Usuario/wekafiles/packages/FS-Studio/DB/predictions.sql";
                                         try {
                                             runner.runScript(new BufferedReader(new FileReader(file)));
 
@@ -3242,7 +3347,7 @@ attrSelExpTabs.addTab("Results", results);
                                         + "VALUES ('"+idExp+"','"+valuesPredict.get(z).actual()+"','"+valuesPredict.get(z).predicted()+"','"+dt+"','"+eval+"','"+search+"','"+cls+"')");
                                     } catch(Exception ex){
                                         ScriptRunner runner = new ScriptRunner(conn, false, false);
-                                        String file = "C:/Users/Usuario/wekafiles/packages/FeatureSelectionStudio/DB/predictions.sql";
+                                        String file = "C:/Users/Usuario/wekafiles/packages/FS-Studio/DB/predictions.sql";
                                         try {
                                             runner.runScript(new BufferedReader(new FileReader(file)));
 
@@ -3280,9 +3385,9 @@ attrSelExpTabs.addTab("Results", results);
         Properties p = new Properties();
         
         try {
-            p.load(new FileReader("C:/Users/Usuario/wekafiles/packages/FeatureSelectionStudio/DatabaseUtils.props"));
+            p.load(new FileReader("C:/Users/Usuario/wekafiles/packages/FS-Studio/DatabaseUtils.props"));
         } catch (IOException ex) {
-            m_Log.logMessage(ex.getMessage());
+            m_Log.logMessage("The properties file cannot be read");
             m_Log.statusMessage("See error log");
         }
         
@@ -3291,7 +3396,7 @@ attrSelExpTabs.addTab("Results", results);
         try {
            Class.forName(driver);
         } catch (ClassNotFoundException ex){
-           m_Log.logMessage(ex.getMessage());
+           m_Log.logMessage("Driver not found");
            m_Log.statusMessage("See error log");
         }
         
@@ -3634,11 +3739,13 @@ attrSelExpTabs.addTab("Results", results);
         m_ASEPanel.addToHistory();
         m_CEPanel.addToHistory();
         
+        m_Log.logMessage("Start of experimentation");
+        
         int numThreads = 4;
-        int numObjects = listIntances.size()*listClassifier.size();
+        int numObjects = listInstances.size()*listClassifier.size();
         
         if(!listEvaluators.isEmpty()){
-            numObjects += listIntances.size()*listClassifier.size()*listEvaluators.size();
+            numObjects += listInstances.size()*listClassifier.size()*listEvaluators.size();
         }
         
         if(!numThreadsTextField.getText().trim().equals("")){
@@ -3653,17 +3760,17 @@ attrSelExpTabs.addTab("Results", results);
         Collection<SearchEvaluatorAndClassifier> concurrentExp = new LinkedList<>();
         
         if(!listEvaluators.isEmpty() && !listSearchAlgorithms.isEmpty()){
-            for(int i = 0; i < listIntances.size(); i++){
+            for(int i = 0; i < listInstances.size(); i++){
                 //listEvaluators and listSearchAlgorithms are the same size
                 for(int j = 0; j < listEvaluators.size(); j++){
                     for(int z = 0; z < listClassifier.size(); z++){
-                        Instances inst = new Instances(listIntances.get(i));
+                        Instances inst = new Instances(listInstances.get(i));
 
                         //testMode = 0 holdOutSplit, 1 = crossValidation, 2 = leaveOneOut
                         int testMode = 0;
                         int numFolds = 10;
                         int seed = 1;
-                        int classIndex = listIntances.get(i).classIndex();
+                        int classIndex = listInstances.get(i).classIndex();
                         double percent = 70;
 
                         ASEvaluation evaluator = (ASEvaluation) listEvaluators.get(j);
@@ -3692,8 +3799,7 @@ attrSelExpTabs.addTab("Results", results);
                             Classifier cls = (Classifier) listClassifier.get(z);
 
                             concurrentExp.add(new SearchEvaluatorAndClassifier(m_Log, inst, testMode, numFolds, seed, classIndex, 
-                                    percent, evaluator, search, cls, progressExp, Math.round(100/numObjects)));
-
+                                    percent, evaluator, search, cls, progressExp, Math.round(100/numObjects), preserveOrderCheckbox.isSelected()));
                         } catch (Exception ex) {
                             m_Log.logMessage(ex.getMessage());
                             m_Log.statusMessage("See error log");
@@ -3704,15 +3810,15 @@ attrSelExpTabs.addTab("Results", results);
         }
         
         //no attribute selection
-        for(int i = 0; i < listIntances.size(); i++){
+        for(int i = 0; i < listInstances.size(); i++){
             for(int j = 0; j < listClassifier.size(); j++){
-                Instances inst = new Instances(listIntances.get(i));
+                Instances inst = new Instances(listInstances.get(i));
 
                 //testMode = 0 holdOutSplit, 1 = crossValidation, 2 = leaveOneOut
                 int testMode = 0;
                 int numFolds = 10;
                 int seed = 1;
-                int classIndex = listIntances.get(i).classIndex();
+                int classIndex = listInstances.get(i).classIndex();
                 double percent = 70;
 
                 try {
@@ -3733,12 +3839,12 @@ attrSelExpTabs.addTab("Results", results);
                         testMode = 2;
                         numFolds = inst.numInstances();
                     }
-
+                    
                     //Classifier
                     Classifier cls = (Classifier) listClassifier.get(j);
 
                     concurrentExp.add(new SearchEvaluatorAndClassifier(m_Log, inst, testMode, numFolds, seed, classIndex, 
-                            percent, null, null, cls, progressExp, Math.round(100/numObjects)));
+                            percent, null, null, cls, progressExp, Math.round(100/numObjects), preserveOrderCheckbox.isSelected()));
                 } catch (Exception ex) {
                     m_Log.logMessage(ex.getMessage());
                     m_Log.statusMessage("See error log");
@@ -3804,11 +3910,11 @@ attrSelExpTabs.addTab("Results", results);
     // Variables declaration - do not modify//GEN-BEGIN:variables
     private javax.swing.JCheckBox accuracyMetricsCheckBox;
     private javax.swing.JLabel actionsClassifierLabel;
-    private javax.swing.JLabel actionsDatasetsLabel;
     private javax.swing.JLabel actionsFeatureLabel;
     private javax.swing.JButton addClassifierBtn;
     private javax.swing.JButton addFeatureBtn;
     private javax.swing.JButton addFileBtn;
+    private javax.swing.JButton addFolderBtn;
     private javax.swing.JTabbedPane attrSelExpTabs;
     private javax.swing.JLabel attributesLabel;
     private javax.swing.JTextField attributesTextField;
@@ -3871,6 +3977,7 @@ attrSelExpTabs.addTab("Results", results);
     private javax.swing.JPanel predictions;
     private javax.swing.JScrollPane predictionsScrollPane;
     private javax.swing.JTable predictionsTable;
+    private javax.swing.JCheckBox preserveOrderCheckbox;
     private javax.swing.JProgressBar progressExp;
     private javax.swing.JCheckBox r2MetricsCheckBox;
     private javax.swing.JCheckBox recallMetricsCheckBox;
