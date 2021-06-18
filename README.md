@@ -19,6 +19,10 @@ Idea and supervision by: **Prof. Dr. Gualberto Asencio-Cortés** (final degree t
 4. Press the OK button
 5. Restart Weka
 
+## User manual (in spanish)
+
+https://github.com/gualbe/weka-feature-selection-studio/raw/main/FS-Studio%20Manual.pdf
+
 ## Screenshots
 
 The Experiment panel:
