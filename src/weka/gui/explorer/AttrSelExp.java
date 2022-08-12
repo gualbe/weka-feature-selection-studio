@@ -3092,9 +3092,8 @@ attrSelExpTabs.addTab("Results", results);
             }
             
             String dir = System.getProperty("user.home");
-            String[] bayComp = new String[]{"python", dir + "\\wekafiles\\\\packages\\\\FS-Studio\\bayesianComparator.py", tmpdir};
-            
-            m_Log.logMessage("" + dir);
+            String[] bayComp = new String[]{"python", dir + "\\wekafiles\\\\packages\\FS-Studio\\bayesianComparator.py", tmpdir};
+            //String[] bayComp = new String[]{"python", "bayesianComparator.py", tmpdir};
               
             Process proc = Runtime.getRuntime().exec(bayComp);
             
@@ -3117,16 +3116,38 @@ attrSelExpTabs.addTab("Results", results);
             
             List<String> com = new ArrayList<>();
             
-            for(int i = 0; i < metricsTableModel.getRowCount(); i++){
-                for(int j = 0; j < metricsTableModel.getRowCount(); j++){
-                    if(!metricsTableModel.getValueAt(i, 1).equals("original") && !metricsTableModel.getValueAt(j, 1).equals("original") && i != j){
-                        com.add((String)metricsTableModel.getValueAt(i, 1) + " " +(String)metricsTableModel.getValueAt(i, 2) + " " +(String)metricsTableModel.getValueAt(i, 3) + ";" + (String)metricsTableModel.getValueAt(j, 1) + " " +(String)metricsTableModel.getValueAt(j, 2) + " " + (String)metricsTableModel.getValueAt(j, 3));
+            for(int i = 0; i < listEvaluators.size(); i++){
+                String ev = findAlgorithms(captionEV, getSpec(listEvaluators.get(i)));
+                String se = findAlgorithms(captionSE, getSpec(listSearchAlgorithms.get(i)));
+
+                for(int j = 0; j < listClassifier.size(); j++){
+                    String c = findAlgorithms(captionCL, getSpec(listClassifier.get(j)));
+
+                    com.add(ev + " " + se + " " + c);
+                }
+            }
+            
+            String ev = "original";
+            String se = "original";
+            
+            for(int i = 0; i < listClassifier.size(); i++){
+                String c = findAlgorithms(captionCL, getSpec(listClassifier.get(i)));
+
+                com.add(ev + " " + se + " " + c);
+            }
+            
+            List<String> auxCom = new ArrayList<>(); 
+            
+            for(int i = 0; i < com.size(); i++){
+                for(int j = 0; j < com.size(); j++){
+                    if(i != j){
+                        auxCom.add(com.get(i) + ";" + com.get(j));
                     }
                 }
             }
             
-            for(int i = 0; i < com.size(); i++){
-                String[] aux = com.get(i).split(";");
+            for(int i = 0; i < auxCom.size(); i++){
+                String[] aux = auxCom.get(i).split(";");
                 String[] aux1 = aux[0].split(" ");
                 String[] aux2 = aux[1].split(" ");
                 String[] metric = resultsBuff.get(i).replace("[" , "").replace("]", "").split(" ");
@@ -3190,6 +3211,32 @@ attrSelExpTabs.addTab("Results", results);
                 s = "";
             }
         }
+        
+        String ev = "original";
+        String se = "original";
+            
+        for(int j = 0; j < listClassifier.size(); j++){
+            String c = getSpec(listClassifier.get(j));
+
+            for(int z = 0; z < resultsAttrSelExp.size(); z++){
+                Future<ResultsAttrSelExp> objectResult = resultsAttrSelExp.get(z);
+
+                if(objectResult.get().getEvaluator() == null && objectResult.get().getSearch() == null){
+                    if(c.equals(getSpec(objectResult.get().getClassifier()))){
+                        Evaluation evalResult = objectResult.get().getEvalClassifier();
+
+                        if(evalResult != null){
+                            int index = foundInstances(objectResult.get().getInst());
+                            s += Double.toString(evalResult.fMeasure(listClassPositive.get(index))) + ";";
+                        }
+                    }
+                }
+            }
+
+            m.add(s);
+            s = "";
+        }
+        
         
         return m;
     }

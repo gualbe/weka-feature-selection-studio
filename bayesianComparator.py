@@ -14,6 +14,7 @@ def main(listM1, listM2):
 
 if __name__ == '__main__':
     path = sys.argv[1]
+
     f = open(path + "\\metricsJava.txt", "r")
     lineas = f.readlines()
     f.close()
