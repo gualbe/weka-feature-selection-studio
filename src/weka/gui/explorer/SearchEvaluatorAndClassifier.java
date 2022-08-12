@@ -26,29 +26,40 @@ import weka.gui.SysErrLog;
  */
 public class SearchEvaluatorAndClassifier implements Callable<ResultsAttrSelExp>{
     private Logger log = new SysErrLog();
-    private final Instances inst;
-    private final int testMode;
-    private final int numFolds;
-    private final int seed; 
-    private final int classIndex;
-    private final double percent;
-    private final ASEvaluation evaluator;
-    private final ASSearch search;
-    private final Classifier classifier;
+    private Instances inst;
+    private int testMode;
+    private int seed; 
+    private int classIndex;
+    private ASEvaluation evaluator;
+    private ASSearch search;
+    private Classifier classifier;
     private final JProgressBar progressBar;
-    private final int percentThreads;
-    private final boolean selectedPreserveOrder;
+    private int percentThreads;
+    private Instances train;
+    private Instances test;
+    private final int fold;
 
-    public SearchEvaluatorAndClassifier(Logger m_Log, Instances inst, int testMode, int numFolds, int seed, int classIndex, 
-            double percent, ASEvaluation evaluator, ASSearch search, Classifier classifier, 
-            JProgressBar progressBar, int pThreads, boolean selectedPreserveOrder) throws Exception {
+    public SearchEvaluatorAndClassifier(Logger m_Log, Instances inst, int testMode, int seed, int classIndex, 
+            ASEvaluation evaluator, ASSearch search, Classifier classifier, 
+            JProgressBar progressBar, int pThreads, Instances train, Instances test, int fold) throws Exception {
         this.log = m_Log;
         this.inst = new Instances(inst);
         this.testMode = testMode;
-        this.numFolds = numFolds;
         this.seed = seed;
         this.classIndex = classIndex;
-        this.percent = percent;
+        
+        if(train == null){
+            this.train = train;
+        }else{
+            this.train = new Instances(train);
+        }
+        
+        if(test == null){
+            this.test = test;
+        }else{
+            this.test = new Instances(test);
+        }
+        
         
         if(evaluator != null && search != null){
             this.evaluator = ASEvaluation.makeCopies(evaluator, 1)[0];
@@ -61,12 +72,11 @@ public class SearchEvaluatorAndClassifier implements Callable<ResultsAttrSelExp>
         this.classifier = AbstractClassifier.makeCopy(classifier);
         this.progressBar = progressBar;
         this.percentThreads = pThreads;
-        this.selectedPreserveOrder = selectedPreserveOrder;
+        this.fold = fold;
     }
     
     public ResultsAttrSelExp run() {
-        Random random;
-        Instances train, newTrain, test, newTest = null;
+        Instances newTrain, newTest = null;
         AttributeSelection filter;
         //Classifier cls = classifier;
         Classifier cls = null;
@@ -79,22 +89,13 @@ public class SearchEvaluatorAndClassifier implements Callable<ResultsAttrSelExp>
         //Inside eval all the metrics and errors are generated
         Evaluation eval = null;
         int numAttr = 0;
+        ResultsAttrSelExp result = null;
+        //setup meta-classifier
+        Classifier classif;
         
         try{
             switch (testMode) {
                 case 0: // Hold-out mode
-                    if(!selectedPreserveOrder){
-                        random = new Random(seed);
-                        inst.randomize(random);
-                    }
-                    
-                    int trainSize = (int) Math.round(inst.numInstances() * percent / 100);
-                    int testSize = inst.numInstances() - trainSize;
-                    
-                    //build train and test
-                    train = new Instances(inst, 0, trainSize);
-                    test = new Instances(inst, trainSize, testSize);
-
                     //build filter for AttributeSelection
                     filter = new AttributeSelection();
                     
@@ -115,14 +116,44 @@ public class SearchEvaluatorAndClassifier implements Callable<ResultsAttrSelExp>
                     eval = new Evaluation(newTrain);
                     eval.evaluateModel(cls, newTest);
                     numAttr = newTest.numAttributes();
-                    break;
-                case 1: case 2: // CV and Leave One Out mode
-                    random = new Random(seed);
-                    inst.randomize(random);
-
-                    //setup meta-classifier
-                    Classifier classif;
                     
+                    train = null;
+                    test = null;
+                    newTrain = null;
+                    newTest = null;
+                    
+                    System.gc();
+                    
+                    result = new ResultsAttrSelExp(eval, newTest, inst, evaluator, search, classifier, numAttr, 0);
+                    break;
+                case 1:  // CV mode
+                    if(evaluator != null && search != null){
+                        classif = new AttributeSelectedClassifier();
+                        ((AttributeSelectedClassifier)classif).setClassifier(cls);
+                        ((AttributeSelectedClassifier)classif).setEvaluator(evaluator);
+                        ((AttributeSelectedClassifier)classif).setSearch(search);
+                        
+                        //number of attributes
+                        filter = new AttributeSelection();
+                        filter.setEvaluator(evaluator);
+                        filter.setSearch(search);
+                        filter.setInputFormat(inst);
+                        Instances attr = Filter.useFilter(inst, filter);
+                        numAttr = attr.numAttributes();
+                    } else { //no attribute selection
+                        classif = cls;
+                        
+                        numAttr = inst.numAttributes();
+                    }
+                    
+                    //Classifier
+                    classif.buildClassifier(train);
+
+                    eval = new Evaluation(train);
+                    eval.evaluateModel(classif, test);
+                    result = new ResultsAttrSelExp(eval, test, inst, evaluator, search, classifier, numAttr, fold);
+                    break;
+                case 2:  // Leave One Out mode
                     if(evaluator != null && search != null){
                         classif = new AttributeSelectedClassifier();
                         ((AttributeSelectedClassifier)classif).setClassifier(cls);
@@ -144,8 +175,8 @@ public class SearchEvaluatorAndClassifier implements Callable<ResultsAttrSelExp>
                     
                     //cross-validate classifier
                     eval = new Evaluation(inst);
-                    eval.crossValidateModel(classif, inst, numFolds, new Random(seed));
-                    newTest = new Instances(inst);
+                    eval.crossValidateModel(classif, inst, inst.numInstances(), new Random(seed));
+                    result = new ResultsAttrSelExp(eval, test, inst, evaluator, search, classifier, numAttr, fold);
                     break;
                 default:
                     throw new Exception("Test mode not implemented");
@@ -157,11 +188,13 @@ public class SearchEvaluatorAndClassifier implements Callable<ResultsAttrSelExp>
             log.statusMessage("See error log");
         } 
         
-        ResultsAttrSelExp result = new ResultsAttrSelExp(eval, newTest, inst, evaluator, search, classifier, numAttr);
-        
         synchronized(progressBar) {
             progressBar.setValue(progressBar.getValue()+percentThreads);
         }
+        
+        this.inst = null;
+        
+        System.gc();
         
         return result;
     }
@@ -171,5 +204,9 @@ public class SearchEvaluatorAndClassifier implements Callable<ResultsAttrSelExp>
         ResultsAttrSelExp res = this.run();
         
         return res;
+    }
+
+    public void setPercentThreads(int percentThreads) {
+        this.percentThreads = percentThreads;
     }
 }

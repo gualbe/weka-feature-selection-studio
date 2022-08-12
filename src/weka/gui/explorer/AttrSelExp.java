@@ -15,29 +15,41 @@ import java.awt.GridBagConstraints;
 import java.awt.Rectangle;
 import java.awt.event.ActionEvent;
 import java.awt.event.ActionListener;
+import java.awt.event.ItemEvent;
 import java.beans.PropertyChangeEvent;
 import java.beans.PropertyChangeListener;
 import java.io.BufferedReader;
+import java.io.BufferedWriter;
 import java.io.File;
 import java.io.FileNotFoundException;
 import java.io.FileOutputStream;
 import java.io.FileReader;
+import java.io.FileWriter;
 import java.io.IOException;
+import java.io.InputStreamReader;
+import java.lang.reflect.Array;
+import java.nio.file.Path;
+import java.nio.file.Paths;
 import java.sql.Connection;
 import java.sql.DriverManager;
 import java.sql.PreparedStatement;
 import java.sql.ResultSet;
 import java.sql.SQLException;
 import java.sql.Statement;
+import java.text.DecimalFormat;
 import java.text.SimpleDateFormat;
 import java.time.LocalDateTime;
 import java.time.format.DateTimeFormatter;
 import java.util.ArrayList;
 import java.util.Collection;
+import java.util.Collections;
 import java.util.Date;
 import java.util.Enumeration;
+import java.util.HashMap;
+import java.util.Iterator;
 import java.util.LinkedList;
 import java.util.List;
+import java.util.Map;
 import java.util.Properties;
 import java.util.Random;
 import java.util.Vector;
@@ -62,6 +74,7 @@ import javax.swing.JRadioButton;
 import javax.swing.JTable;
 import javax.swing.ListCellRenderer;
 import javax.swing.ListSelectionModel;
+import javax.swing.RowFilter;
 import javax.swing.SwingConstants;
 import javax.swing.SwingUtilities;
 import javax.swing.SwingWorker;
@@ -69,6 +82,8 @@ import javax.swing.filechooser.FileNameExtensionFilter;
 import javax.swing.table.DefaultTableCellRenderer;
 import javax.swing.table.DefaultTableModel;
 import javax.swing.table.TableColumn;
+import javax.swing.table.TableModel;
+import javax.swing.table.TableRowSorter;
 import weka.attributeSelection.ASEvaluation;
 import weka.attributeSelection.ASSearch;
 import weka.attributeSelection.AttributeEvaluator;
@@ -106,10 +121,13 @@ import org.jfree.chart.axis.CategoryAxis;
 import org.jfree.chart.plot.CategoryPlot;
 import org.jfree.chart.plot.PlotOrientation;
 import org.jfree.data.category.DefaultCategoryDataset;
+import weka.classifiers.evaluation.ConfusionMatrix;
+import weka.classifiers.meta.AttributeSelectedClassifier;
 import weka.core.converters.ConverterUtils;
 import weka.core.converters.ConverterUtils.DataSink;
 import weka.core.converters.ConverterUtils.DataSource;
 import weka.core.converters.DatabaseSaver;
+import weka.filters.Filter;
 
 /**
  *
@@ -196,6 +214,8 @@ public class AttrSelExp extends javax.swing.JPanel implements Explorer.ExplorerP
     protected DefaultTableModel classifierTableModel;
     protected DefaultTableModel predictionsTableModel;
     protected DefaultTableModel metricsTableModel;
+    protected DefaultTableModel captionTableModel;
+    protected DefaultTableModel statisticalTestTableModel;
 
     /*
     * To easily add rows to the lists
@@ -210,6 +230,11 @@ public class AttrSelExp extends javax.swing.JPanel implements Explorer.ExplorerP
     */
     protected ExecutorService executor;
     protected List<Future<ResultsAttrSelExp>> resultsAttrSelExp;
+    
+    //HashMap with the name of the evaluators, searchs and classifiers
+    Map<String, String> captionEV = new HashMap<String, String>();
+    Map<String, String> captionSE = new HashMap<String, String>();
+    Map<String, String> captionCL = new HashMap<String, String>();
     
     /*
     * To facilitate the access of table data
@@ -235,6 +260,8 @@ public class AttrSelExp extends javax.swing.JPanel implements Explorer.ExplorerP
         classifierTableModel = (DefaultTableModel) classifierTable.getModel();
         predictionsTableModel = (DefaultTableModel) predictionsTable.getModel();
         metricsTableModel = (DefaultTableModel) metricsTable.getModel();
+        captionTableModel = (DefaultTableModel) captionTable.getModel();
+        statisticalTestTableModel = (DefaultTableModel) statisticalTestTable.getModel();
         
         //lists of the Jpanel
         datasetsList.setModel(datasetsListModel);
@@ -317,6 +344,12 @@ public class AttrSelExp extends javax.swing.JPanel implements Explorer.ExplorerP
         stopExpBtn = new javax.swing.JButton();
         numThreadsLabel = new javax.swing.JLabel();
         numThreadsTextField = new javax.swing.JTextField();
+        experimentPanel = new javax.swing.JPanel();
+        nameExpLabel = new javax.swing.JLabel();
+        nameExpTextField = new javax.swing.JTextField();
+        saveExpBtn = new javax.swing.JButton();
+        loadExpBtn = new javax.swing.JButton();
+        jPanel2 = new javax.swing.JPanel();
         results = new javax.swing.JPanel();
         predictions = new javax.swing.JPanel();
         predictionsScrollPane = new javax.swing.JScrollPane();
@@ -329,18 +362,21 @@ public class AttrSelExp extends javax.swing.JPanel implements Explorer.ExplorerP
         searchList = new javax.swing.JList<>();
         classifierListScrollPane = new javax.swing.JScrollPane();
         classifierList = new javax.swing.JList<>();
-        attributesLabel = new javax.swing.JLabel();
         attributesTextField = new javax.swing.JTextField();
         saveCSVPredictionsBtn = new javax.swing.JButton();
         saveARFFPredictionsBtn = new javax.swing.JButton();
         loadDatasetPredictionsBtn = new javax.swing.JButton();
         updatePredictionsBtn = new javax.swing.JButton();
-        datasetsPredictionsLabel = new javax.swing.JLabel();
-        evaluatorsPredictionsLabel = new javax.swing.JLabel();
-        searchsPredictionsLabel = new javax.swing.JLabel();
-        classifiersPredictionsLabel = new javax.swing.JLabel();
         saveBBDDBtn = new javax.swing.JButton();
         loadBBDDBtn = new javax.swing.JButton();
+        attributesLabel = new javax.swing.JLabel();
+        datasetsLabel = new javax.swing.JLabel();
+        evaluatorsLabel = new javax.swing.JLabel();
+        searchsLabel = new javax.swing.JLabel();
+        classifiersLabel = new javax.swing.JLabel();
+        nomenclaturePanel = new javax.swing.JPanel();
+        captionScrollPane = new javax.swing.JScrollPane();
+        captionTable = new javax.swing.JTable();
         metrics = new javax.swing.JPanel();
         metricsScrollPane = new javax.swing.JScrollPane();
         metricsTable = new javax.swing.JTable();
@@ -361,6 +397,7 @@ public class AttrSelExp extends javax.swing.JPanel implements Explorer.ExplorerP
         rmseMetricsCheckBox = new javax.swing.JCheckBox();
         mapeMetricsCheckBox = new javax.swing.JCheckBox();
         r2MetricsCheckBox = new javax.swing.JCheckBox();
+        saveLatexMetricsBtn = new javax.swing.JButton();
         graph = new javax.swing.JPanel();
         barChartPanel = new javax.swing.JPanel();
         metricGraphLabel = new javax.swing.JLabel();
@@ -372,6 +409,22 @@ public class AttrSelExp extends javax.swing.JPanel implements Explorer.ExplorerP
         savePDFGraphBtn = new javax.swing.JButton();
         savePNGGraphBtn = new javax.swing.JButton();
         updateGraphBtn = new javax.swing.JButton();
+        statisticalTestsPanel = new javax.swing.JPanel();
+        metricStatisLabel = new javax.swing.JLabel();
+        numDatasetsStatisLabel = new javax.swing.JLabel();
+        numSamStatisLabel = new javax.swing.JLabel();
+        groupsLOOLabel = new javax.swing.JLabel();
+        metricStatisComboBox = new javax.swing.JComboBox<>();
+        numDatasetsStatisValue = new javax.swing.JLabel();
+        numSamStatisValue = new javax.swing.JLabel();
+        filterStatisLabel = new javax.swing.JLabel();
+        filterStatisComboBox = new javax.swing.JComboBox<>();
+        saveCSVStatisBtn = new javax.swing.JButton();
+        putPreprocessStatisBtn = new javax.swing.JButton();
+        statisticalTestScrollPane = new javax.swing.JScrollPane();
+        statisticalTestTable = new javax.swing.JTable();
+        messageNormTestLabel = new javax.swing.JLabel();
+        valueGroupsLOOTextField = new javax.swing.JTextField();
 
         validationRadioBtn.add(holdOutSplitBtn);
         validationRadioBtn.add(crossValidationBtn);
@@ -447,7 +500,7 @@ public class AttrSelExp extends javax.swing.JPanel implements Explorer.ExplorerP
         gridBagConstraints.weighty = 1.0;
         datasets.add(datasetsScrollPane, gridBagConstraints);
 
-        loadBtnDataset.setText("Load");
+        loadBtnDataset.setText("Put to Preprocess");
         loadBtnDataset.setToolTipText("Load the selected row of the table in the tab Preprocess");
         loadBtnDataset.addActionListener(new java.awt.event.ActionListener() {
             public void actionPerformed(java.awt.event.ActionEvent evt) {
@@ -851,7 +904,7 @@ validation.setBorder(BorderFactory.createCompoundBorder(
     runPanel.setLayout(new java.awt.GridBagLayout());
     gridBagConstraints = new java.awt.GridBagConstraints();
     gridBagConstraints.gridx = 0;
-    gridBagConstraints.gridy = 2;
+    gridBagConstraints.gridy = 3;
     gridBagConstraints.gridwidth = 2;
     gridBagConstraints.fill = java.awt.GridBagConstraints.HORIZONTAL;
     gridBagConstraints.weightx = 1.0;
@@ -867,7 +920,7 @@ validation.setBorder(BorderFactory.createCompoundBorder(
     });
     gridBagConstraints = new java.awt.GridBagConstraints();
     gridBagConstraints.gridx = 0;
-    gridBagConstraints.gridy = 1;
+    gridBagConstraints.gridy = 2;
     gridBagConstraints.anchor = java.awt.GridBagConstraints.EAST;
     gridBagConstraints.weightx = 1.0;
     runPanel.add(runExpBtn, gridBagConstraints);
@@ -882,7 +935,7 @@ validation.setBorder(BorderFactory.createCompoundBorder(
     });
     gridBagConstraints = new java.awt.GridBagConstraints();
     gridBagConstraints.gridx = 1;
-    gridBagConstraints.gridy = 1;
+    gridBagConstraints.gridy = 2;
     gridBagConstraints.anchor = java.awt.GridBagConstraints.WEST;
     gridBagConstraints.weightx = 1.0;
     runPanel.add(stopExpBtn, gridBagConstraints);
@@ -891,7 +944,7 @@ validation.setBorder(BorderFactory.createCompoundBorder(
     numThreadsLabel.setToolTipText("Number of threads with which it will be executed");
     gridBagConstraints = new java.awt.GridBagConstraints();
     gridBagConstraints.gridx = 0;
-    gridBagConstraints.gridy = 0;
+    gridBagConstraints.gridy = 1;
     gridBagConstraints.anchor = java.awt.GridBagConstraints.EAST;
     gridBagConstraints.weightx = 1.0;
     runPanel.add(numThreadsLabel, gridBagConstraints);
@@ -901,10 +954,80 @@ validation.setBorder(BorderFactory.createCompoundBorder(
     numThreadsTextField.setPreferredSize(new java.awt.Dimension(50, 22));
     gridBagConstraints = new java.awt.GridBagConstraints();
     gridBagConstraints.gridx = 1;
-    gridBagConstraints.gridy = 0;
+    gridBagConstraints.gridy = 1;
     gridBagConstraints.anchor = java.awt.GridBagConstraints.WEST;
     gridBagConstraints.weightx = 1.0;
     runPanel.add(numThreadsTextField, gridBagConstraints);
+
+    experimentPanel.setPreferredSize(new java.awt.Dimension(120, 25));
+    experimentPanel.setLayout(new java.awt.GridBagLayout());
+
+    nameExpLabel.setText("Name:   ");
+    nameExpLabel.setMaximumSize(new java.awt.Dimension(50, 14));
+    nameExpLabel.setMinimumSize(new java.awt.Dimension(50, 14));
+    nameExpLabel.setPreferredSize(new java.awt.Dimension(50, 14));
+    gridBagConstraints = new java.awt.GridBagConstraints();
+    gridBagConstraints.gridx = 0;
+    gridBagConstraints.gridy = 0;
+    experimentPanel.add(nameExpLabel, gridBagConstraints);
+
+    nameExpTextField.setMinimumSize(new java.awt.Dimension(100, 30));
+    nameExpTextField.setPreferredSize(new java.awt.Dimension(140, 30));
+    gridBagConstraints = new java.awt.GridBagConstraints();
+    gridBagConstraints.gridx = 1;
+    gridBagConstraints.gridy = 0;
+    experimentPanel.add(nameExpTextField, gridBagConstraints);
+
+    saveExpBtn.setText("Save Experiment");
+    saveExpBtn.addActionListener(new java.awt.event.ActionListener() {
+        public void actionPerformed(java.awt.event.ActionEvent evt) {
+            saveExpBtnActionPerformed(evt);
+        }
+    });
+    gridBagConstraints = new java.awt.GridBagConstraints();
+    gridBagConstraints.gridx = 0;
+    gridBagConstraints.gridy = 1;
+    experimentPanel.add(saveExpBtn, gridBagConstraints);
+
+    loadExpBtn.setText("Load Experiment");
+    loadExpBtn.addActionListener(new java.awt.event.ActionListener() {
+        public void actionPerformed(java.awt.event.ActionEvent evt) {
+            loadExpBtnActionPerformed(evt);
+        }
+    });
+    gridBagConstraints = new java.awt.GridBagConstraints();
+    gridBagConstraints.gridx = 1;
+    gridBagConstraints.gridy = 1;
+    experimentPanel.add(loadExpBtn, gridBagConstraints);
+
+    gridBagConstraints = new java.awt.GridBagConstraints();
+    gridBagConstraints.gridx = 0;
+    gridBagConstraints.gridy = 4;
+    gridBagConstraints.gridwidth = 2;
+    gridBagConstraints.fill = java.awt.GridBagConstraints.BOTH;
+    gridBagConstraints.weightx = 1.0;
+    gridBagConstraints.weighty = 1.0;
+    runPanel.add(experimentPanel, gridBagConstraints);
+
+    javax.swing.GroupLayout jPanel2Layout = new javax.swing.GroupLayout(jPanel2);
+    jPanel2.setLayout(jPanel2Layout);
+    jPanel2Layout.setHorizontalGroup(
+        jPanel2Layout.createParallelGroup(javax.swing.GroupLayout.Alignment.LEADING)
+        .addGap(0, 0, Short.MAX_VALUE)
+    );
+    jPanel2Layout.setVerticalGroup(
+        jPanel2Layout.createParallelGroup(javax.swing.GroupLayout.Alignment.LEADING)
+        .addGap(0, 0, Short.MAX_VALUE)
+    );
+
+    gridBagConstraints = new java.awt.GridBagConstraints();
+    gridBagConstraints.gridx = 0;
+    gridBagConstraints.gridy = 0;
+    gridBagConstraints.gridwidth = 2;
+    gridBagConstraints.fill = java.awt.GridBagConstraints.BOTH;
+    gridBagConstraints.weightx = 1.0;
+    gridBagConstraints.weighty = 1.0;
+    runPanel.add(jPanel2, gridBagConstraints);
 
     gridBagConstraints = new java.awt.GridBagConstraints();
     gridBagConstraints.gridx = 1;
@@ -930,7 +1053,7 @@ validation.setBorder(BorderFactory.createCompoundBorder(
 
         },
         new String [] {
-            "Actual value", "Predicted value", "Dataset", "Evaluator", "Search", "Classifier"
+            "Actual", "Predicted", "Dataset", "Evaluator", "Search", "Classifier"
         }
     ) {
         Class[] types = new Class [] {
@@ -954,78 +1077,74 @@ validation.setBorder(BorderFactory.createCompoundBorder(
     gridBagConstraints = new java.awt.GridBagConstraints();
     gridBagConstraints.gridx = 0;
     gridBagConstraints.gridy = 0;
-    gridBagConstraints.gridwidth = 6;
+    gridBagConstraints.gridwidth = 5;
     gridBagConstraints.gridheight = 3;
     gridBagConstraints.fill = java.awt.GridBagConstraints.BOTH;
     gridBagConstraints.weightx = 1.0;
     gridBagConstraints.weighty = 1.0;
     predictions.add(predictionsScrollPane, gridBagConstraints);
 
-    datasetsListScrollPane.setMinimumSize(new java.awt.Dimension(110, 23));
+    datasetsListScrollPane.setMaximumSize(new java.awt.Dimension(300, 32767));
+    datasetsListScrollPane.setMinimumSize(new java.awt.Dimension(100, 23));
     datasetsListScrollPane.setName(""); // NOI18N
-    datasetsListScrollPane.setPreferredSize(new java.awt.Dimension(110, 23));
+    datasetsListScrollPane.setPreferredSize(new java.awt.Dimension(158, 130));
 
     datasetsListScrollPane.setViewportView(datasetsList);
 
     gridBagConstraints = new java.awt.GridBagConstraints();
-    gridBagConstraints.gridx = 6;
-    gridBagConstraints.gridy = 1;
-    gridBagConstraints.gridheight = 2;
+    gridBagConstraints.gridx = 5;
+    gridBagConstraints.gridy = 2;
     gridBagConstraints.fill = java.awt.GridBagConstraints.BOTH;
     gridBagConstraints.anchor = java.awt.GridBagConstraints.NORTH;
     gridBagConstraints.weighty = 1.0;
     predictions.add(datasetsListScrollPane, gridBagConstraints);
 
-    evaluatorListScrollPane.setMinimumSize(new java.awt.Dimension(110, 23));
+    evaluatorListScrollPane.setMaximumSize(new java.awt.Dimension(300, 32767));
+    evaluatorListScrollPane.setMinimumSize(new java.awt.Dimension(100, 23));
+    evaluatorListScrollPane.setPreferredSize(new java.awt.Dimension(158, 130));
     evaluatorListScrollPane.setViewportView(evaluatorList);
 
     gridBagConstraints = new java.awt.GridBagConstraints();
-    gridBagConstraints.gridx = 7;
-    gridBagConstraints.gridy = 1;
-    gridBagConstraints.gridheight = 2;
+    gridBagConstraints.gridx = 6;
+    gridBagConstraints.gridy = 2;
     gridBagConstraints.fill = java.awt.GridBagConstraints.BOTH;
     gridBagConstraints.anchor = java.awt.GridBagConstraints.NORTH;
     gridBagConstraints.weighty = 1.0;
     predictions.add(evaluatorListScrollPane, gridBagConstraints);
 
-    searchListScrollPane.setMinimumSize(new java.awt.Dimension(110, 23));
+    searchListScrollPane.setMaximumSize(new java.awt.Dimension(300, 32767));
+    searchListScrollPane.setMinimumSize(new java.awt.Dimension(100, 23));
+    searchListScrollPane.setPreferredSize(new java.awt.Dimension(158, 130));
 
     searchListScrollPane.setViewportView(searchList);
 
     gridBagConstraints = new java.awt.GridBagConstraints();
-    gridBagConstraints.gridx = 8;
-    gridBagConstraints.gridy = 1;
-    gridBagConstraints.gridheight = 2;
+    gridBagConstraints.gridx = 7;
+    gridBagConstraints.gridy = 2;
     gridBagConstraints.fill = java.awt.GridBagConstraints.BOTH;
     gridBagConstraints.anchor = java.awt.GridBagConstraints.NORTH;
     gridBagConstraints.weighty = 1.0;
     predictions.add(searchListScrollPane, gridBagConstraints);
 
-    classifierListScrollPane.setMinimumSize(new java.awt.Dimension(110, 23));
+    classifierListScrollPane.setMaximumSize(new java.awt.Dimension(300, 32767));
+    classifierListScrollPane.setMinimumSize(new java.awt.Dimension(100, 23));
+    classifierListScrollPane.setPreferredSize(new java.awt.Dimension(158, 130));
 
     classifierListScrollPane.setViewportView(classifierList);
 
     gridBagConstraints = new java.awt.GridBagConstraints();
-    gridBagConstraints.gridx = 9;
-    gridBagConstraints.gridy = 1;
-    gridBagConstraints.gridheight = 2;
+    gridBagConstraints.gridx = 8;
+    gridBagConstraints.gridy = 2;
     gridBagConstraints.fill = java.awt.GridBagConstraints.BOTH;
     gridBagConstraints.anchor = java.awt.GridBagConstraints.NORTH;
     gridBagConstraints.weighty = 1.0;
     predictions.add(classifierListScrollPane, gridBagConstraints);
 
-    attributesLabel.setText("Attributes:");
-    attributesLabel.setToolTipText("The input format must be number followed by like, eg: 1, 2");
+    attributesTextField.setToolTipText("The input format must be number followed by like, eg: 1, 2");
     gridBagConstraints = new java.awt.GridBagConstraints();
     gridBagConstraints.gridx = 6;
     gridBagConstraints.gridy = 3;
-    predictions.add(attributesLabel, gridBagConstraints);
-
-    attributesTextField.setToolTipText("The input format must be number followed by like, eg: 1, 2");
-    gridBagConstraints = new java.awt.GridBagConstraints();
-    gridBagConstraints.gridx = 7;
-    gridBagConstraints.gridy = 3;
-    gridBagConstraints.gridwidth = 3;
+    gridBagConstraints.gridwidth = 2;
     gridBagConstraints.fill = java.awt.GridBagConstraints.HORIZONTAL;
     gridBagConstraints.anchor = java.awt.GridBagConstraints.WEST;
     predictions.add(attributesTextField, gridBagConstraints);
@@ -1052,15 +1171,16 @@ validation.setBorder(BorderFactory.createCompoundBorder(
     gridBagConstraints.gridy = 3;
     predictions.add(saveARFFPredictionsBtn, gridBagConstraints);
 
-    loadDatasetPredictionsBtn.setText("Load dataset");
+    loadDatasetPredictionsBtn.setText("Put to Preprocess");
     loadDatasetPredictionsBtn.addActionListener(new java.awt.event.ActionListener() {
         public void actionPerformed(java.awt.event.ActionEvent evt) {
             loadDatasetPredictionsBtnActionPerformed(evt);
         }
     });
     gridBagConstraints = new java.awt.GridBagConstraints();
-    gridBagConstraints.gridx = 3;
+    gridBagConstraints.gridx = 4;
     gridBagConstraints.gridy = 3;
+    gridBagConstraints.anchor = java.awt.GridBagConstraints.WEST;
     predictions.add(loadDatasetPredictionsBtn, gridBagConstraints);
 
     updatePredictionsBtn.setText("Update");
@@ -1070,34 +1190,9 @@ validation.setBorder(BorderFactory.createCompoundBorder(
         }
     });
     gridBagConstraints = new java.awt.GridBagConstraints();
-    gridBagConstraints.gridx = 5;
-    gridBagConstraints.gridy = 3;
-    gridBagConstraints.anchor = java.awt.GridBagConstraints.WEST;
-    predictions.add(updatePredictionsBtn, gridBagConstraints);
-
-    datasetsPredictionsLabel.setText("Datasets");
-    gridBagConstraints = new java.awt.GridBagConstraints();
-    gridBagConstraints.gridx = 6;
-    gridBagConstraints.gridy = 0;
-    predictions.add(datasetsPredictionsLabel, gridBagConstraints);
-
-    evaluatorsPredictionsLabel.setText("Evaluators");
-    gridBagConstraints = new java.awt.GridBagConstraints();
-    gridBagConstraints.gridx = 7;
-    gridBagConstraints.gridy = 0;
-    predictions.add(evaluatorsPredictionsLabel, gridBagConstraints);
-
-    searchsPredictionsLabel.setText("Searchs");
-    gridBagConstraints = new java.awt.GridBagConstraints();
     gridBagConstraints.gridx = 8;
-    gridBagConstraints.gridy = 0;
-    predictions.add(searchsPredictionsLabel, gridBagConstraints);
-
-    classifiersPredictionsLabel.setText("Classifiers");
-    gridBagConstraints = new java.awt.GridBagConstraints();
-    gridBagConstraints.gridx = 9;
-    gridBagConstraints.gridy = 0;
-    predictions.add(classifiersPredictionsLabel, gridBagConstraints);
+    gridBagConstraints.gridy = 3;
+    predictions.add(updatePredictionsBtn, gridBagConstraints);
 
     saveBBDDBtn.setText("Save to DB");
     saveBBDDBtn.setToolTipText("Save predictions and metrics to the database");
@@ -1120,36 +1215,118 @@ validation.setBorder(BorderFactory.createCompoundBorder(
         }
     });
     gridBagConstraints = new java.awt.GridBagConstraints();
-    gridBagConstraints.gridx = 4;
+    gridBagConstraints.gridx = 3;
     gridBagConstraints.gridy = 3;
     gridBagConstraints.anchor = java.awt.GridBagConstraints.WEST;
     predictions.add(loadBBDDBtn, gridBagConstraints);
 
-    predictions.setBorder(BorderFactory.createCompoundBorder(
-        BorderFactory.createTitledBorder("Predictions"),
+    attributesLabel.setText("Attributes:");
+    gridBagConstraints = new java.awt.GridBagConstraints();
+    gridBagConstraints.gridx = 5;
+    gridBagConstraints.gridy = 3;
+    predictions.add(attributesLabel, gridBagConstraints);
+
+    datasetsLabel.setText("Datasets");
+    gridBagConstraints = new java.awt.GridBagConstraints();
+    gridBagConstraints.gridx = 5;
+    gridBagConstraints.gridy = 1;
+    predictions.add(datasetsLabel, gridBagConstraints);
+
+    evaluatorsLabel.setText("Evaluators");
+    gridBagConstraints = new java.awt.GridBagConstraints();
+    gridBagConstraints.gridx = 6;
+    gridBagConstraints.gridy = 1;
+    predictions.add(evaluatorsLabel, gridBagConstraints);
+
+    searchsLabel.setText("Searchs");
+    gridBagConstraints = new java.awt.GridBagConstraints();
+    gridBagConstraints.gridx = 7;
+    gridBagConstraints.gridy = 1;
+    predictions.add(searchsLabel, gridBagConstraints);
+
+    classifiersLabel.setText("Classifiers");
+    gridBagConstraints = new java.awt.GridBagConstraints();
+    gridBagConstraints.gridx = 8;
+    gridBagConstraints.gridy = 1;
+    predictions.add(classifiersLabel, gridBagConstraints);
+
+    nomenclaturePanel.setLayout(new java.awt.GridBagLayout());
+
+    captionTable.setModel(new javax.swing.table.DefaultTableModel(
+        new Object [][] {
+
+        },
+        new String [] {
+            "Name", "Definition"
+        }
+    ) {
+        Class[] types = new Class [] {
+            java.lang.String.class, java.lang.String.class
+        };
+        boolean[] canEdit = new boolean [] {
+            false, false
+        };
+
+        public Class getColumnClass(int columnIndex) {
+            return types [columnIndex];
+        }
+
+        public boolean isCellEditable(int rowIndex, int columnIndex) {
+            return canEdit [columnIndex];
+        }
+    });
+    captionScrollPane.setViewportView(captionTable);
+    if (captionTable.getColumnModel().getColumnCount() > 0) {
+        captionTable.getColumnModel().getColumn(0).setPreferredWidth(60);
+        captionTable.getColumnModel().getColumn(0).setMaxWidth(70);
+    }
+
+    gridBagConstraints = new java.awt.GridBagConstraints();
+    gridBagConstraints.gridx = 0;
+    gridBagConstraints.gridy = 0;
+    gridBagConstraints.fill = java.awt.GridBagConstraints.BOTH;
+    gridBagConstraints.weightx = 1.0;
+    gridBagConstraints.weighty = 1.0;
+    nomenclaturePanel.add(captionScrollPane, gridBagConstraints);
+
+    nomenclaturePanel.setBorder(BorderFactory.createCompoundBorder(
+        BorderFactory.createTitledBorder("Nomenclature"),
         BorderFactory.createEmptyBorder(0, 5, 5, 5)));
 
 gridBagConstraints = new java.awt.GridBagConstraints();
-gridBagConstraints.gridx = 0;
+gridBagConstraints.gridx = 5;
 gridBagConstraints.gridy = 0;
-gridBagConstraints.gridwidth = 2;
+gridBagConstraints.gridwidth = 4;
 gridBagConstraints.fill = java.awt.GridBagConstraints.BOTH;
 gridBagConstraints.weightx = 1.0;
 gridBagConstraints.weighty = 1.0;
-results.add(predictions, gridBagConstraints);
+predictions.add(nomenclaturePanel, gridBagConstraints);
 
-metrics.setMinimumSize(new java.awt.Dimension(505, 180));
-metrics.setName(""); // NOI18N
-metrics.setPreferredSize(new java.awt.Dimension(705, 508));
-metrics.setLayout(new java.awt.GridBagLayout());
+predictions.setBorder(BorderFactory.createCompoundBorder(
+    BorderFactory.createTitledBorder("Predictions"),
+    BorderFactory.createEmptyBorder(0, 5, 5, 5)));
 
-metricsTable.setModel(new javax.swing.table.DefaultTableModel(
-    new Object [][] {
+    gridBagConstraints = new java.awt.GridBagConstraints();
+    gridBagConstraints.gridx = 0;
+    gridBagConstraints.gridy = 0;
+    gridBagConstraints.gridwidth = 2;
+    gridBagConstraints.fill = java.awt.GridBagConstraints.BOTH;
+    gridBagConstraints.weightx = 1.0;
+    gridBagConstraints.weighty = 1.0;
+    results.add(predictions, gridBagConstraints);
 
-    },
-    new String [] {
-        "Dataset", "Evaluator", "Search", "Classifier", "NumAttributes"
-    }
+    metrics.setMinimumSize(new java.awt.Dimension(505, 180));
+    metrics.setName(""); // NOI18N
+    metrics.setPreferredSize(new java.awt.Dimension(705, 508));
+    metrics.setLayout(new java.awt.GridBagLayout());
+
+    metricsTable.setModel(new javax.swing.table.DefaultTableModel(
+        new Object [][] {
+
+        },
+        new String [] {
+            "Dataset", "Evaluator", "Search", "Classifier", "NumAttributes"
+        }
     ) {
         Class[] types = new Class [] {
             java.lang.String.class, java.lang.String.class, java.lang.String.class, java.lang.String.class, java.lang.Integer.class
@@ -1173,7 +1350,7 @@ metricsTable.setModel(new javax.swing.table.DefaultTableModel(
     gridBagConstraints = new java.awt.GridBagConstraints();
     gridBagConstraints.gridx = 0;
     gridBagConstraints.gridy = 0;
-    gridBagConstraints.gridwidth = 3;
+    gridBagConstraints.gridwidth = 4;
     gridBagConstraints.gridheight = 9;
     gridBagConstraints.fill = java.awt.GridBagConstraints.BOTH;
     gridBagConstraints.weightx = 1.0;
@@ -1202,27 +1379,27 @@ metricsTable.setModel(new javax.swing.table.DefaultTableModel(
     gridBagConstraints.gridy = 9;
     metrics.add(saveARFFMetricsBtn, gridBagConstraints);
 
-    loadDatasetMetricsBtn.setText("Load dataset");
+    loadDatasetMetricsBtn.setText("Put to Preprocess");
     loadDatasetMetricsBtn.addActionListener(new java.awt.event.ActionListener() {
         public void actionPerformed(java.awt.event.ActionEvent evt) {
             loadDatasetMetricsBtnActionPerformed(evt);
         }
     });
     gridBagConstraints = new java.awt.GridBagConstraints();
-    gridBagConstraints.gridx = 2;
+    gridBagConstraints.gridx = 3;
     gridBagConstraints.gridy = 9;
     gridBagConstraints.anchor = java.awt.GridBagConstraints.WEST;
     metrics.add(loadDatasetMetricsBtn, gridBagConstraints);
 
     classificationMetricsLabel.setText("Classification");
     gridBagConstraints = new java.awt.GridBagConstraints();
-    gridBagConstraints.gridx = 3;
+    gridBagConstraints.gridx = 4;
     gridBagConstraints.gridy = 0;
     metrics.add(classificationMetricsLabel, gridBagConstraints);
 
     regressionMetricsLabel.setText("Regression");
     gridBagConstraints = new java.awt.GridBagConstraints();
-    gridBagConstraints.gridx = 4;
+    gridBagConstraints.gridx = 5;
     gridBagConstraints.gridy = 0;
     metrics.add(regressionMetricsLabel, gridBagConstraints);
 
@@ -1234,7 +1411,7 @@ metricsTable.setModel(new javax.swing.table.DefaultTableModel(
         }
     });
     gridBagConstraints = new java.awt.GridBagConstraints();
-    gridBagConstraints.gridx = 3;
+    gridBagConstraints.gridx = 4;
     gridBagConstraints.gridy = 1;
     gridBagConstraints.anchor = java.awt.GridBagConstraints.WEST;
     metrics.add(accuracyMetricsCheckBox, gridBagConstraints);
@@ -1247,7 +1424,7 @@ metricsTable.setModel(new javax.swing.table.DefaultTableModel(
         }
     });
     gridBagConstraints = new java.awt.GridBagConstraints();
-    gridBagConstraints.gridx = 3;
+    gridBagConstraints.gridx = 4;
     gridBagConstraints.gridy = 2;
     gridBagConstraints.anchor = java.awt.GridBagConstraints.WEST;
     metrics.add(precisionMetricsCheckBox, gridBagConstraints);
@@ -1260,7 +1437,7 @@ metricsTable.setModel(new javax.swing.table.DefaultTableModel(
         }
     });
     gridBagConstraints = new java.awt.GridBagConstraints();
-    gridBagConstraints.gridx = 3;
+    gridBagConstraints.gridx = 4;
     gridBagConstraints.gridy = 3;
     gridBagConstraints.anchor = java.awt.GridBagConstraints.WEST;
     metrics.add(recallMetricsCheckBox, gridBagConstraints);
@@ -1273,7 +1450,7 @@ metricsTable.setModel(new javax.swing.table.DefaultTableModel(
         }
     });
     gridBagConstraints = new java.awt.GridBagConstraints();
-    gridBagConstraints.gridx = 3;
+    gridBagConstraints.gridx = 4;
     gridBagConstraints.gridy = 4;
     gridBagConstraints.anchor = java.awt.GridBagConstraints.WEST;
     metrics.add(fMeasureMetricsCheckBox, gridBagConstraints);
@@ -1286,7 +1463,7 @@ metricsTable.setModel(new javax.swing.table.DefaultTableModel(
         }
     });
     gridBagConstraints = new java.awt.GridBagConstraints();
-    gridBagConstraints.gridx = 3;
+    gridBagConstraints.gridx = 4;
     gridBagConstraints.gridy = 5;
     gridBagConstraints.anchor = java.awt.GridBagConstraints.WEST;
     metrics.add(kappaMetricsCheckBox, gridBagConstraints);
@@ -1299,7 +1476,7 @@ metricsTable.setModel(new javax.swing.table.DefaultTableModel(
         }
     });
     gridBagConstraints = new java.awt.GridBagConstraints();
-    gridBagConstraints.gridx = 3;
+    gridBagConstraints.gridx = 4;
     gridBagConstraints.gridy = 6;
     gridBagConstraints.anchor = java.awt.GridBagConstraints.WEST;
     metrics.add(mccMetricsCheckBox, gridBagConstraints);
@@ -1312,7 +1489,7 @@ metricsTable.setModel(new javax.swing.table.DefaultTableModel(
         }
     });
     gridBagConstraints = new java.awt.GridBagConstraints();
-    gridBagConstraints.gridx = 3;
+    gridBagConstraints.gridx = 4;
     gridBagConstraints.gridy = 7;
     gridBagConstraints.anchor = java.awt.GridBagConstraints.NORTHWEST;
     metrics.add(aucMetricsCheckBox, gridBagConstraints);
@@ -1325,7 +1502,7 @@ metricsTable.setModel(new javax.swing.table.DefaultTableModel(
         }
     });
     gridBagConstraints = new java.awt.GridBagConstraints();
-    gridBagConstraints.gridx = 4;
+    gridBagConstraints.gridx = 5;
     gridBagConstraints.gridy = 1;
     gridBagConstraints.anchor = java.awt.GridBagConstraints.WEST;
     metrics.add(maeMetricsCheckBox, gridBagConstraints);
@@ -1338,7 +1515,7 @@ metricsTable.setModel(new javax.swing.table.DefaultTableModel(
         }
     });
     gridBagConstraints = new java.awt.GridBagConstraints();
-    gridBagConstraints.gridx = 4;
+    gridBagConstraints.gridx = 5;
     gridBagConstraints.gridy = 2;
     gridBagConstraints.anchor = java.awt.GridBagConstraints.WEST;
     metrics.add(mseMetricsCheckBox, gridBagConstraints);
@@ -1351,7 +1528,7 @@ metricsTable.setModel(new javax.swing.table.DefaultTableModel(
         }
     });
     gridBagConstraints = new java.awt.GridBagConstraints();
-    gridBagConstraints.gridx = 4;
+    gridBagConstraints.gridx = 5;
     gridBagConstraints.gridy = 3;
     gridBagConstraints.anchor = java.awt.GridBagConstraints.WEST;
     metrics.add(rmseMetricsCheckBox, gridBagConstraints);
@@ -1364,7 +1541,7 @@ metricsTable.setModel(new javax.swing.table.DefaultTableModel(
         }
     });
     gridBagConstraints = new java.awt.GridBagConstraints();
-    gridBagConstraints.gridx = 4;
+    gridBagConstraints.gridx = 5;
     gridBagConstraints.gridy = 4;
     gridBagConstraints.anchor = java.awt.GridBagConstraints.WEST;
     metrics.add(mapeMetricsCheckBox, gridBagConstraints);
@@ -1377,10 +1554,21 @@ metricsTable.setModel(new javax.swing.table.DefaultTableModel(
         }
     });
     gridBagConstraints = new java.awt.GridBagConstraints();
-    gridBagConstraints.gridx = 4;
+    gridBagConstraints.gridx = 5;
     gridBagConstraints.gridy = 5;
     gridBagConstraints.anchor = java.awt.GridBagConstraints.WEST;
     metrics.add(r2MetricsCheckBox, gridBagConstraints);
+
+    saveLatexMetricsBtn.setText("Save to Latex");
+    saveLatexMetricsBtn.addActionListener(new java.awt.event.ActionListener() {
+        public void actionPerformed(java.awt.event.ActionEvent evt) {
+            saveLatexMetricsBtnActionPerformed(evt);
+        }
+    });
+    gridBagConstraints = new java.awt.GridBagConstraints();
+    gridBagConstraints.gridx = 2;
+    gridBagConstraints.gridy = 9;
+    metrics.add(saveLatexMetricsBtn, gridBagConstraints);
 
     metrics.setBorder(BorderFactory.createCompoundBorder(
         BorderFactory.createTitledBorder("Metrics"),
@@ -1421,7 +1609,7 @@ barChartPanelLayout.setHorizontalGroup(
     gridBagConstraints.weighty = 1.0;
     graph.add(barChartPanel, gridBagConstraints);
 
-    metricGraphLabel.setText("Metric:");
+    metricGraphLabel.setText("Y-axis:");
     gridBagConstraints = new java.awt.GridBagConstraints();
     gridBagConstraints.gridx = 1;
     gridBagConstraints.gridy = 0;
@@ -1524,10 +1712,171 @@ barChartPanelLayout.setHorizontalGroup(
 gridBagConstraints = new java.awt.GridBagConstraints();
 gridBagConstraints.gridx = 1;
 gridBagConstraints.gridy = 1;
+gridBagConstraints.gridwidth = 2;
 gridBagConstraints.fill = java.awt.GridBagConstraints.BOTH;
 gridBagConstraints.weightx = 1.0;
 gridBagConstraints.weighty = 1.0;
 results.add(graph, gridBagConstraints);
+
+statisticalTestsPanel.setLayout(new java.awt.GridBagLayout());
+
+metricStatisLabel.setText("Metric:");
+gridBagConstraints = new java.awt.GridBagConstraints();
+gridBagConstraints.gridx = 0;
+gridBagConstraints.gridy = 0;
+gridBagConstraints.anchor = java.awt.GridBagConstraints.WEST;
+statisticalTestsPanel.add(metricStatisLabel, gridBagConstraints);
+
+numDatasetsStatisLabel.setText("Number of datasets:");
+gridBagConstraints = new java.awt.GridBagConstraints();
+gridBagConstraints.gridx = 0;
+gridBagConstraints.gridy = 1;
+gridBagConstraints.anchor = java.awt.GridBagConstraints.WEST;
+statisticalTestsPanel.add(numDatasetsStatisLabel, gridBagConstraints);
+
+numSamStatisLabel.setText("Number of samples:");
+gridBagConstraints = new java.awt.GridBagConstraints();
+gridBagConstraints.gridx = 0;
+gridBagConstraints.gridy = 2;
+gridBagConstraints.anchor = java.awt.GridBagConstraints.WEST;
+statisticalTestsPanel.add(numSamStatisLabel, gridBagConstraints);
+
+groupsLOOLabel.setText("Groups for leave-one-out: ");
+gridBagConstraints = new java.awt.GridBagConstraints();
+gridBagConstraints.gridx = 0;
+gridBagConstraints.gridy = 3;
+gridBagConstraints.anchor = java.awt.GridBagConstraints.WEST;
+statisticalTestsPanel.add(groupsLOOLabel, gridBagConstraints);
+
+metricStatisComboBox.setMinimumSize(new java.awt.Dimension(98, 20));
+metricStatisComboBox.setPreferredSize(new java.awt.Dimension(98, 20));
+metricStatisComboBox.addItemListener(new java.awt.event.ItemListener() {
+    public void itemStateChanged(java.awt.event.ItemEvent evt) {
+        metricStatisComboBoxItemStateChanged(evt);
+    }
+    });
+    gridBagConstraints = new java.awt.GridBagConstraints();
+    gridBagConstraints.gridx = 1;
+    gridBagConstraints.gridy = 0;
+    gridBagConstraints.gridwidth = 2;
+    gridBagConstraints.fill = java.awt.GridBagConstraints.HORIZONTAL;
+    statisticalTestsPanel.add(metricStatisComboBox, gridBagConstraints);
+
+    numDatasetsStatisValue.setText("0");
+    gridBagConstraints = new java.awt.GridBagConstraints();
+    gridBagConstraints.gridx = 1;
+    gridBagConstraints.gridy = 1;
+    statisticalTestsPanel.add(numDatasetsStatisValue, gridBagConstraints);
+
+    numSamStatisValue.setText("0");
+    gridBagConstraints = new java.awt.GridBagConstraints();
+    gridBagConstraints.gridx = 1;
+    gridBagConstraints.gridy = 2;
+    statisticalTestsPanel.add(numSamStatisValue, gridBagConstraints);
+
+    filterStatisLabel.setText("Filter:");
+    gridBagConstraints = new java.awt.GridBagConstraints();
+    gridBagConstraints.gridx = 0;
+    gridBagConstraints.gridy = 6;
+    gridBagConstraints.anchor = java.awt.GridBagConstraints.EAST;
+    statisticalTestsPanel.add(filterStatisLabel, gridBagConstraints);
+
+    filterStatisComboBox.setToolTipText("Filter test results can include All (all results), just the Positives (1 or 2) or the Negatives (0).");
+    filterStatisComboBox.setMinimumSize(new java.awt.Dimension(98, 20));
+    filterStatisComboBox.setPreferredSize(new java.awt.Dimension(98, 20));
+    filterStatisComboBox.addItemListener(new java.awt.event.ItemListener() {
+        public void itemStateChanged(java.awt.event.ItemEvent evt) {
+            filterStatisComboBoxItemStateChanged(evt);
+        }
+    });
+    gridBagConstraints = new java.awt.GridBagConstraints();
+    gridBagConstraints.gridx = 1;
+    gridBagConstraints.gridy = 6;
+    gridBagConstraints.gridwidth = 2;
+    gridBagConstraints.fill = java.awt.GridBagConstraints.HORIZONTAL;
+    statisticalTestsPanel.add(filterStatisComboBox, gridBagConstraints);
+
+    saveCSVStatisBtn.setText("Save to CSV");
+    saveCSVStatisBtn.addActionListener(new java.awt.event.ActionListener() {
+        public void actionPerformed(java.awt.event.ActionEvent evt) {
+            saveCSVStatisBtnActionPerformed(evt);
+        }
+    });
+    gridBagConstraints = new java.awt.GridBagConstraints();
+    gridBagConstraints.gridx = 3;
+    gridBagConstraints.gridy = 6;
+    statisticalTestsPanel.add(saveCSVStatisBtn, gridBagConstraints);
+
+    putPreprocessStatisBtn.setText("Put to Preprocess");
+    putPreprocessStatisBtn.addActionListener(new java.awt.event.ActionListener() {
+        public void actionPerformed(java.awt.event.ActionEvent evt) {
+            putPreprocessStatisBtnActionPerformed(evt);
+        }
+    });
+    gridBagConstraints = new java.awt.GridBagConstraints();
+    gridBagConstraints.gridx = 4;
+    gridBagConstraints.gridy = 6;
+    gridBagConstraints.anchor = java.awt.GridBagConstraints.WEST;
+    statisticalTestsPanel.add(putPreprocessStatisBtn, gridBagConstraints);
+
+    statisticalTestTable.setModel(new javax.swing.table.DefaultTableModel(
+        new Object [][] {
+
+        },
+        new String [] {
+            "Evaluator #1", "Search #1", "Algorithm #1", "Evaluator #2", "Search #2", "Algorithm #2", "p(left)", "p(no)", "p(right)", "Test"
+        }
+    ) {
+        Class[] types = new Class [] {
+            java.lang.String.class, java.lang.String.class, java.lang.String.class, java.lang.String.class, java.lang.String.class, java.lang.String.class, java.lang.String.class, java.lang.String.class, java.lang.String.class, java.lang.String.class
+        };
+        boolean[] canEdit = new boolean [] {
+            false, false, false, false, false, false, false, false, false, false
+        };
+
+        public Class getColumnClass(int columnIndex) {
+            return types [columnIndex];
+        }
+
+        public boolean isCellEditable(int rowIndex, int columnIndex) {
+            return canEdit [columnIndex];
+        }
+    });
+    statisticalTestTable.setToolTipText("Test result can be 0 (no difference between methods), 1 (the method #1 is better) or 2 (the method #2 is better). ");
+    statisticalTestScrollPane.setViewportView(statisticalTestTable);
+
+    gridBagConstraints = new java.awt.GridBagConstraints();
+    gridBagConstraints.gridx = 0;
+    gridBagConstraints.gridy = 5;
+    gridBagConstraints.gridwidth = 5;
+    gridBagConstraints.fill = java.awt.GridBagConstraints.BOTH;
+    gridBagConstraints.weightx = 1.0;
+    gridBagConstraints.weighty = 1.0;
+    statisticalTestsPanel.add(statisticalTestScrollPane, gridBagConstraints);
+    gridBagConstraints = new java.awt.GridBagConstraints();
+    gridBagConstraints.gridx = 0;
+    gridBagConstraints.gridy = 4;
+    gridBagConstraints.gridwidth = 3;
+    gridBagConstraints.anchor = java.awt.GridBagConstraints.WEST;
+    statisticalTestsPanel.add(messageNormTestLabel, gridBagConstraints);
+
+    valueGroupsLOOTextField.setText("30");
+    gridBagConstraints = new java.awt.GridBagConstraints();
+    gridBagConstraints.gridx = 1;
+    gridBagConstraints.gridy = 3;
+    statisticalTestsPanel.add(valueGroupsLOOTextField, gridBagConstraints);
+
+    statisticalTestsPanel.setBorder(BorderFactory.createCompoundBorder(
+        BorderFactory.createTitledBorder("Statistical tests"),
+        BorderFactory.createEmptyBorder(0, 5, 5, 5)));
+
+gridBagConstraints = new java.awt.GridBagConstraints();
+gridBagConstraints.gridx = 2;
+gridBagConstraints.gridy = 0;
+gridBagConstraints.fill = java.awt.GridBagConstraints.BOTH;
+gridBagConstraints.weightx = 1.0;
+gridBagConstraints.weighty = 1.0;
+results.add(statisticalTestsPanel, gridBagConstraints);
 
 attrSelExpTabs.addTab("tab2", results);
 
@@ -1598,11 +1947,11 @@ attrSelExpTabs.addTab("Results", results);
     private void removeBtnFeatureActionPerformed(java.awt.event.ActionEvent evt) {//GEN-FIRST:event_removeBtnFeatureActionPerformed
         m_Log.statusMessage("OK");
         
-        if(featuresTable.getSelectedRow() != -1){
+        if(featuresTable.getSelectedRow() != -1){           
             listEvaluators.remove(featuresTable.getSelectedRow());
             listSearchAlgorithms.remove(featuresTable.getSelectedRow());
             featuresTableModel.removeRow(featuresTable.getSelectedRow());
-            
+              
             checkRun();
         }else{
             m_Log.logMessage("No row is selected");
@@ -1639,7 +1988,7 @@ attrSelExpTabs.addTab("Results", results);
         if(classifierTable.getSelectedRow() != -1){
             listClassifier.remove(classifierTable.getSelectedRow());
             classifierTableModel.removeRow(classifierTable.getSelectedRow());
-            
+                        
             checkRun();
         }else{
             m_Log.logMessage("No row is selected");
@@ -1696,6 +2045,8 @@ attrSelExpTabs.addTab("Results", results);
                 executor.shutdown(); // Disable new tasks from being submitted
                 
                 try {
+                    executor.shutdownNow(); // Cancel currently executing tasks
+                    
                     // Wait a while for existing tasks to terminate
                     if (!executor.awaitTermination(60, TimeUnit.SECONDS)) {
                         executor.shutdownNow(); // Cancel currently executing tasks
@@ -1876,13 +2227,13 @@ attrSelExpTabs.addTab("Results", results);
 
                 try {
                     dS = objectResult.get().getInst().relationName();
-                    cls = getSpec(objectResult.get().getClassifier());
+                    cls = findAlgorithms(captionCL, getSpec(objectResult.get().getClassifier()));
                     eV = "original";
                     search = "original";
 
                     if(objectResult.get().getEvaluator() != null){
-                        eV = getSpec(objectResult.get().getEvaluator());
-                        search = getSpec(objectResult.get().getSearch());
+                        eV = findAlgorithms(captionEV, getSpec(objectResult.get().getEvaluator()));
+                        search = findAlgorithms(captionSE, getSpec(objectResult.get().getSearch()));
 
                         if(dS != null && datasetsSelect.contains(dS)){
                             if(eV != null && evalsSelect.contains(eV) && search != null && searchsSelect.contains(search)){
@@ -2127,128 +2478,65 @@ attrSelExpTabs.addTab("Results", results);
                 }
 
                 for(int i = 0; i < dataMetrics.size(); i++){
-                    Future<ResultsAttrSelExp> objectResult = resultsAttrSelExp.get(i);
-
                     //if not applicable or an error has occurred
                     if(dataMetrics.get(i) != null){
                         try {
                             if(xAxis1.equals("Dataset") && xAxis2.equals("Search")){
-                                if(objectResult.get().getSearch() != null){
                                     result.setValue((double)dataMetrics.get(i), 
-                                        getSpec(objectResult.get().getSearch()), 
-                                        objectResult.get().getInst().relationName());
-                                }else{
-                                    result.setValue((double)dataMetrics.get(i), 
-                                        "original", 
-                                        objectResult.get().getInst().relationName());
-                                }
+                                        (String)metricsTableModel.getValueAt(i, 2), 
+                                        (String)metricsTableModel.getValueAt(i, 0));
                             } else if(xAxis1.equals("Dataset") && xAxis2.equals("Evaluator")){
-                                if(objectResult.get().getEvaluator() != null){
                                     result.setValue((double)dataMetrics.get(i), 
-                                        getSpec(objectResult.get().getEvaluator()), 
-                                        objectResult.get().getInst().relationName());
-                                }else{
-                                    result.setValue((double)dataMetrics.get(i), 
-                                        "original", 
-                                        objectResult.get().getInst().relationName());
-                                }
+                                        (String)metricsTableModel.getValueAt(i, 1), 
+                                        (String)metricsTableModel.getValueAt(i, 0));
                             } else if(xAxis1.equals("Dataset") && xAxis2.equals("Classifier")){
                                 result.setValue((double)dataMetrics.get(i), 
-                                    getSpec(objectResult.get().getClassifier()), 
-                                    objectResult.get().getInst().relationName());
+                                    (String)metricsTableModel.getValueAt(i, 3), 
+                                    (String)metricsTableModel.getValueAt(i, 0));
                             } else if(xAxis1.equals("Search") && xAxis2.equals("Dataset")){
-                                if(objectResult.get().getSearch() != null){
-                                    result.setValue((double)dataMetrics.get(i), 
-                                        objectResult.get().getInst().relationName(),
-                                        getSpec(objectResult.get().getSearch()));
-                                }else{
-                                    result.setValue((double)dataMetrics.get(i), 
-                                        objectResult.get().getInst().relationName(),
-                                        "original");
-                                }
+                                result.setValue((double)dataMetrics.get(i), 
+                                    (String)metricsTableModel.getValueAt(i, 0),
+                                    (String)metricsTableModel.getValueAt(i, 2));
                             } else if(xAxis1.equals("Search") && xAxis2.equals("Evaluator")){
-                                if(objectResult.get().getSearch() != null){
-                                    result.setValue((double)dataMetrics.get(i), 
-                                        getSpec(objectResult.get().getEvaluator()),
-                                        getSpec(objectResult.get().getSearch()));
-                                }else{
-                                    result.setValue((double)dataMetrics.get(i), 
-                                        "original",
-                                        "original");
-                                }
+                                result.setValue((double)dataMetrics.get(i), 
+                                    (String)metricsTableModel.getValueAt(i, 1),
+                                    (String)metricsTableModel.getValueAt(i, 2));
                             } else if(xAxis1.equals("Search") && xAxis2.equals("Classifier")){
-                                if(objectResult.get().getSearch() != null){
-                                    result.setValue((double)dataMetrics.get(i), 
-                                        getSpec(objectResult.get().getClassifier()),
-                                        getSpec(objectResult.get().getSearch()));
-                                }else{
-                                    result.setValue((double)dataMetrics.get(i), 
-                                        getSpec(objectResult.get().getClassifier()),
-                                        "original");
-                                } 
+                                result.setValue((double)dataMetrics.get(i), 
+                                    (String)metricsTableModel.getValueAt(i, 3),
+                                    (String)metricsTableModel.getValueAt(i, 2));
                             } else if(xAxis1.equals("Evaluator") && xAxis2.equals("Dataset")){
-                                if(objectResult.get().getEvaluator() != null){
-                                    result.setValue((double)dataMetrics.get(i), 
-                                        objectResult.get().getInst().relationName(),
-                                        getSpec(objectResult.get().getEvaluator()));
-                                }else{
-                                    result.setValue((double)dataMetrics.get(i), 
-                                        objectResult.get().getInst().relationName(),
-                                        "original");
-                                }
+                                result.setValue((double)dataMetrics.get(i), 
+                                    (String)metricsTableModel.getValueAt(i, 0),
+                                    (String)metricsTableModel.getValueAt(i, 1));
                             } else if(xAxis1.equals("Evaluator") && xAxis2.equals("Search")){
-                                if(objectResult.get().getEvaluator() != null){
-                                    result.setValue((double)dataMetrics.get(i), 
-                                        getSpec(objectResult.get().getSearch()),
-                                        getSpec(objectResult.get().getEvaluator()));
-                                }else{
-                                    result.setValue((double)dataMetrics.get(i), 
-                                        "original",
-                                        "original");
-                                }
+                                result.setValue((double)dataMetrics.get(i), 
+                                    (String)metricsTableModel.getValueAt(i, 2),
+                                    (String)metricsTableModel.getValueAt(i, 1));
                             } else if(xAxis1.equals("Evaluator") && xAxis2.equals("Classifier")){
-                                if(objectResult.get().getEvaluator() != null){
-                                    result.setValue((double)dataMetrics.get(i), 
-                                        getSpec(objectResult.get().getClassifier()),
-                                        getSpec(objectResult.get().getEvaluator()));
-                                }else{
-                                    result.setValue((double)dataMetrics.get(i), 
-                                        getSpec(objectResult.get().getClassifier()),
-                                        "original");
-                                }
+                                result.setValue((double)dataMetrics.get(i), 
+                                    (String)metricsTableModel.getValueAt(i, 3),
+                                    (String)metricsTableModel.getValueAt(i, 1));
                             } else if(xAxis1.equals("Classifier") && xAxis2.equals("Dataset")){
                                 result.setValue((double)dataMetrics.get(i), 
-                                    objectResult.get().getInst().relationName(),
-                                    getSpec(objectResult.get().getClassifier()));
+                                    (String)metricsTableModel.getValueAt(i, 0),
+                                    (String)metricsTableModel.getValueAt(i, 3));
                             } else if(xAxis1.equals("Classifier") && xAxis2.equals("Evaluator")){
-                                if(objectResult.get().getEvaluator() != null){
-                                    result.setValue((double)dataMetrics.get(i), 
-                                        getSpec(objectResult.get().getEvaluator()),
-                                        getSpec(objectResult.get().getClassifier()));
-                                }else{
-                                    result.setValue((double)dataMetrics.get(i), 
-                                        "original",
-                                        getSpec(objectResult.get().getClassifier()));
-                                }
+                                result.setValue((double)dataMetrics.get(i), 
+                                    (String)metricsTableModel.getValueAt(i, 1),
+                                    (String)metricsTableModel.getValueAt(i, 3));
                             } else if(xAxis1.equals("Classifier") && xAxis2.equals("Search")){
-                                if(objectResult.get().getSearch() != null){
-                                    result.setValue((double)dataMetrics.get(i), 
-                                        getSpec(objectResult.get().getSearch()),
-                                        getSpec(objectResult.get().getClassifier()));
-                                }else{
-                                    result.setValue((double)dataMetrics.get(i), 
-                                        "original",
-                                        getSpec(objectResult.get().getClassifier()));
-                                }   
+                                result.setValue((double)dataMetrics.get(i), 
+                                    (String)metricsTableModel.getValueAt(i, 2),
+                                    (String)metricsTableModel.getValueAt(i, 3)); 
                             }   
-                        } catch (InterruptedException | ExecutionException ex) {
+                        } catch (Exception ex) {
                             result.setValue(0, "", "");
                         }
                     }
-
                 }
 
-                chart = ChartFactory.createBarChart3D(null, xAxis1+"/"+xAxis2, metricSelected,result, PlotOrientation.VERTICAL, true, true, false);
+                chart = ChartFactory.createBarChart(null, xAxis1+"/"+xAxis2, metricSelected,result, PlotOrientation.VERTICAL, true, true, false);
                 CategoryPlot plot = (CategoryPlot) chart.getPlot();
                 plot.setBackgroundAlpha(0.5f);
                 ChartPanel chartPanel = new ChartPanel(chart);
@@ -2301,6 +2589,1391 @@ attrSelExpTabs.addTab("Results", results);
         }
     }//GEN-LAST:event_addFolderBtnActionPerformed
 
+    private void saveLatexMetricsBtnActionPerformed(java.awt.event.ActionEvent evt) {//GEN-FIRST:event_saveLatexMetricsBtnActionPerformed
+        instMetrics = createObjectInstances(metricsTableModel, "Metrics");
+        saveLatexTable(instMetrics, "Metrics");
+    }//GEN-LAST:event_saveLatexMetricsBtnActionPerformed
+
+    private void saveExpBtnActionPerformed(java.awt.event.ActionEvent evt) {//GEN-FIRST:event_saveExpBtnActionPerformed
+        m_Log.statusMessage("Saving experiment. Please wait...");
+        String initialDir = ExplorerDefaults.getInitialDirectory();
+        JFileChooser dirChooser = new JFileChooser(new File(initialDir));
+        dirChooser.setFileSelectionMode(JFileChooser.DIRECTORIES_ONLY);
+        
+        int returnVal = dirChooser.showSaveDialog(this);
+
+        if (returnVal == JFileChooser.APPROVE_OPTION) {
+            //Datasets
+            File newDir = new File(dirChooser.getSelectedFile() + "/" + nameExpTextField.getText() + "/datasets/");
+            
+            try{
+                newDir.mkdirs();
+            }catch(Exception ex){
+                m_Log.logMessage("Error creating directory");
+                m_Log.statusMessage("See error log");
+            }
+            
+            //Save domains
+            for (int i = 0; i < listInstances.size(); i++) {
+                try {
+                    ConverterUtils.DataSink.write(newDir.getAbsolutePath() + "/" + listInstances.get(i).relationName() + ".arff", listInstances.get(i));
+                } catch (Exception ex) {
+                    m_Log.logMessage("Some domain can not be write in the specified directory");
+                    m_Log.statusMessage("See error log");
+                }
+            }
+            
+            //Configuration file
+            //Index class
+            String indexClasses = "Index classes = ";
+            
+            for(int i = 0; i < listInstances.size(); i++){
+                indexClasses += listInstances.get(i).classIndex() + ";";
+            }
+            
+            //Positive class
+            String positiveClasses = "Positive classes = ";
+            
+            for(int i = 0; i < listClassPositive.size(); i++){
+                positiveClasses += listClassPositive.get(i) + ";";
+            }
+            
+            //Evaluator
+            String evaluator = "Evaluator = ";
+            
+            if(!listEvaluators.isEmpty()){
+                for(int i = 0; i < listEvaluators.size(); i++){
+                    evaluator += listEvaluators.get(i).getClass().getName() + " " + Utils.joinOptions(((OptionHandler)listEvaluators.get(i)).getOptions()) + ";";
+                }
+            }
+            
+            //Search
+            String search = "Search = ";
+            
+            if(!listSearchAlgorithms.isEmpty()){
+                for(int i = 0; i < listSearchAlgorithms.size(); i++){
+                    search += listSearchAlgorithms.get(i).getClass().getName() + " " + Utils.joinOptions(((OptionHandler)listSearchAlgorithms.get(i)).getOptions()) + ";";
+                }
+            }
+            
+            //Classifier
+            String classifier = "Classifier = ";
+            
+            if(!listClassifier.isEmpty()){
+                for(int i = 0; i < listClassifier.size(); i++){
+                    classifier += listClassifier.get(i).getClass().getName() + " " + Utils.joinOptions(((OptionHandler)listClassifier.get(i)).getOptions()) + ";";
+                }
+            }
+            
+            //Method of validation
+            String validationMethod = "Validation = ";
+            String validationConf = "Validation conf = ";
+            
+            if(holdOutSplitBtn.isSelected()){
+                validationMethod += "1";
+                validationConf += holdOutSplitTextField.getText();
+                
+                
+                if(preserveOrderCheckbox.isSelected()){
+                    validationConf += ";Yes";
+                }else{
+                    validationConf += ";No";
+                }
+            }else if(crossValidationBtn.isSelected()){
+                validationMethod += "2";
+                validationConf += crossValidationTextField.getText();
+            }else if(leaveOneOutBtn.isSelected()){
+                validationMethod += "3";
+                validationConf += "";
+            }
+            
+            //Threads
+            String threads = "Threads = " + numThreadsTextField.getText();
+            
+            File conf = new File(dirChooser.getSelectedFile() + "/" + nameExpTextField.getText() +"/configuration.cfg");
+            
+            BufferedWriter bw;
+            
+            if(!conf.exists()){
+                try {
+                    bw = new BufferedWriter(new FileWriter(conf));
+                    bw.write(indexClasses);
+                    bw.newLine();
+                    bw.write(positiveClasses);
+                    bw.newLine();
+                    bw.write(evaluator);
+                    bw.newLine();
+                    bw.write(search);
+                    bw.newLine();
+                    bw.write(classifier);
+                    bw.newLine();
+                    bw.write(validationMethod);
+                    bw.newLine();
+                    bw.write(validationConf);
+                    bw.newLine();
+                    bw.write(threads);
+                    bw.close();
+                    
+                    m_Log.statusMessage("Experiment saved succesfully");
+                } catch (IOException ex) {
+                    m_Log.logMessage("Error creating configuration file");
+                    m_Log.statusMessage("See error log");
+                }
+            }
+        }
+    }//GEN-LAST:event_saveExpBtnActionPerformed
+
+    private void loadExpBtnActionPerformed(java.awt.event.ActionEvent evt) {//GEN-FIRST:event_loadExpBtnActionPerformed
+        m_Log.statusMessage("Loading experiment. Please wait...");
+        
+        String initialDir = ExplorerDefaults.getInitialDirectory();
+        JFileChooser dirChooser = new JFileChooser(new File(initialDir));
+        dirChooser.setFileSelectionMode(JFileChooser.DIRECTORIES_ONLY);
+        
+        int returnVal = dirChooser.showOpenDialog(this);
+        
+        if (returnVal == JFileChooser.APPROVE_OPTION) {
+            File f = new File(dirChooser.getSelectedFile()+"/datasets/");
+            
+            //Load datasets
+            File[] files = f.listFiles();
+
+            Instances inst = null;
+            
+            listInstances = new ArrayList<>();
+            
+            datasetsTableModel.setRowCount(0);
+            
+            for (File file : files) {
+                try {
+                    inst = DataSource.read(file.toString());
+                    inst.setClassIndex(inst.numAttributes()-1);
+                    
+                    datasetsTableModel.addRow(new Object[]{inst.relationName(), inst.numInstances(), inst.numAttributes() - 1, inst.numClasses(),
+                        inst.attribute(inst.numAttributes() - 1).name(), inst.attribute(inst.classIndex()).value(0)});
+                    
+                    listInstances.add(inst);
+                    
+                    try{
+                        listClassPositive.add(Integer.parseInt(inst.attribute(inst.classIndex()).value(0)));
+                    }catch(NumberFormatException ex){
+                        listClassPositive.add(0);
+                    }
+                    
+                    m_Log.statusMessage("OK");
+                } catch (Exception ex) {
+                    m_Log.logMessage("Some ARFF file cannot be read");
+                    m_Log.statusMessage("See error log");
+                }
+            }
+            
+            //Read cfg file
+            File cfgFile = new File(dirChooser.getSelectedFile() + "/configuration.cfg");
+            FileReader fr;
+            String contentFile = "";
+            
+            try {
+                fr = new FileReader(cfgFile);
+                BufferedReader br = new BufferedReader(fr);
+                
+                String line;
+                
+                while((line = br.readLine()) != null){
+                    contentFile += line + "\n";
+                }
+                    
+                fr.close();     
+            } catch (FileNotFoundException ex) {
+                m_Log.logMessage("The configuration file could not found");
+                m_Log.statusMessage("See error log");
+            } catch (IOException ex) {
+                m_Log.logMessage("The configuration file could not be read");
+                m_Log.statusMessage("See error log");
+            }
+            
+            String[] contentSplit = contentFile.split("\\n");
+            
+            String[] auxSplit = contentSplit[0].split(" = ");
+            
+            auxSplit = auxSplit[1].split(";");
+            
+            for(int i = 0; i < auxSplit.length; i++){
+                listInstances.get(i).setClassIndex(Integer.parseInt(auxSplit[i]));
+            }
+            
+            auxSplit = contentSplit[1].split(" = ");
+            
+            auxSplit = auxSplit[1].split(";");
+            
+            listClassPositive = new ArrayList<>();
+            
+            for(int i = 0; i < auxSplit.length; i++){
+                listClassPositive.add(Integer.parseInt(auxSplit[i]));
+            }
+            
+            
+            //Evaluator and Search
+            listEvaluators = new ArrayList<>();
+            listSearchAlgorithms = new ArrayList<>();
+            featuresTableModel.setRowCount(0);
+            
+            auxSplit = contentSplit[2].split(" = ");
+            
+            if(auxSplit.length > 1){
+                String[] ev = auxSplit[1].split(";");
+                String[] search = contentSplit[3].split(" = ")[1].split(";");
+                
+                try {
+                    for(int i = 0; i < ev.length; i++){
+                        String[] options = Utils.splitOptions(ev[i]);
+                        String classname = options[0];
+                        options[0] = "";
+                        Class c = Utils.forName(Object.class, classname, null).getClass();
+
+                        if (c.isArray()) {
+                            Object[] arr = (Object[])Array.newInstance(c.getComponentType(), options.length - 1);
+
+                            for (int j = 1; j < options.length; j++) {
+                                String[] ops = Utils.splitOptions(options[j]);
+                                String cname = ops[0];
+                                ops[0] = "";
+                                arr[j - 1] = Utils.forName(Object.class, cname, ops);
+                            }
+                            
+                            m_AttributeEvaluatorEditor.setValue(arr);
+                        } else {
+                            m_AttributeEvaluatorEditor.setValue(Utils.forName(Object.class, classname, options));
+                        }
+                        
+                        
+                        listEvaluators.add(m_AttributeEvaluatorEditor.getValue());
+                        
+                        options = Utils.splitOptions(search[i]);
+                        classname = options[0];
+                        options[0] = "";
+                        c = Utils.forName(Object.class, classname, null).getClass();
+
+                        if (c.isArray()) {
+                            Object[] arr = (Object[])Array.newInstance(c.getComponentType(), options.length - 1);
+
+                            for (int j = 1; j < options.length; j++) {
+                                String[] ops = Utils.splitOptions(options[j]);
+                                String cname = ops[0];
+                                ops[0] = "";
+                                arr[j - 1] = Utils.forName(Object.class, cname, ops);
+                            }
+                            
+                            m_AttributeSearchEditor.setValue(arr);
+                        } else {
+                            m_AttributeSearchEditor.setValue(Utils.forName(Object.class, classname, options));
+                        }
+                        
+                        listSearchAlgorithms.add(m_AttributeSearchEditor.getValue());
+                        
+                        featuresTableModel.addRow(new Object[]{getSpec(m_AttributeEvaluatorEditor.getValue()), getSpec(m_AttributeSearchEditor.getValue())});
+                    }
+                } catch (Exception ex) {
+                    java.util.logging.Logger.getLogger(AttrSelExp.class.getName()).log(Level.SEVERE, null, ex);
+                }
+            }
+            
+            //Classifier
+            listClassifier = new ArrayList<>();
+            classifierTableModel.setRowCount(0);
+            
+            auxSplit = contentSplit[4].split(" = ");
+            
+            if(auxSplit.length > 1){
+                String[] cls = auxSplit[1].split(";");
+                
+                try {
+                    for(int i = 0; i < cls.length; i++){
+                        String[] options = Utils.splitOptions(cls[i]);
+                        String classname = options[0];
+                        options[0] = "";
+                        Class c = Utils.forName(Object.class, classname, null).getClass();
+
+                        if (c.isArray()) {
+                            Object[] arr = (Object[])Array.newInstance(c.getComponentType(), options.length - 1);
+
+                            for (int j = 1; j < options.length; j++) {
+                                String[] ops = Utils.splitOptions(options[j]);
+                                String cname = ops[0];
+                                ops[0] = "";
+                                arr[j - 1] = Utils.forName(Object.class, cname, ops);
+                            }
+                            
+                            m_ClassifierEditor.setValue(arr);
+                        } else {
+                            m_ClassifierEditor.setValue(Utils.forName(Object.class, classname, options));
+                        }
+                        
+                        listClassifier.add(m_ClassifierEditor.getValue());
+                        classifierTableModel.addRow(new Object[]{getSpec(m_ClassifierEditor.getValue())});
+                    }
+                } catch (Exception ex) {
+                    java.util.logging.Logger.getLogger(AttrSelExp.class.getName()).log(Level.SEVERE, null, ex);
+                }
+            }
+            
+            //Validation
+            auxSplit = contentSplit[5].split(" = ");
+            
+            switch (auxSplit[1]) {
+                case "1":
+                    holdOutSplitBtn.setSelected(true);
+                    holdOutSplitTextField.setEnabled(true);
+                    auxSplit = contentSplit[6].split(" = ")[1].split(";");
+                    holdOutSplitTextField.setText(auxSplit[0]);
+                    
+                    if(auxSplit[1].equals("No")){
+                        preserveOrderCheckbox.setSelected(true);
+                    }else{
+                        preserveOrderCheckbox.setSelected(false);
+                    }
+                    
+                    break;
+                case "2":
+                    crossValidationBtn.setSelected(true);
+                    auxSplit = contentSplit[6].split(" = ");
+                    crossValidationTextField.setEnabled(true);
+                    crossValidationTextField.setText(auxSplit[1]);
+                    
+                    break;
+                case "3":
+                    leaveOneOutBtn.setSelected(true);
+                    
+                    break;
+                default:
+                    break;
+            }
+            
+            updateRadioLinks();
+                    
+            //Threads
+            auxSplit = contentSplit[7].split(" = ");
+            
+            numThreadsTextField.setText(auxSplit[1]);
+        }    
+    }//GEN-LAST:event_loadExpBtnActionPerformed
+
+    private void metricStatisComboBoxItemStateChanged(java.awt.event.ItemEvent evt) {//GEN-FIRST:event_metricStatisComboBoxItemStateChanged
+        if(evt.getStateChange() == ItemEvent.SELECTED) {
+            if(leaveOneOutBtn.isSelected()){
+                try {
+                    switch ((String)metricStatisComboBox.getSelectedItem()) {
+                        case "F-measure":
+                            bayesianComparator(fMeasureGroupsLOO(Integer.parseInt(valueGroupsLOOTextField.getText())));
+                            break;
+                        case "Precision":
+                            bayesianComparator(precisionGroupsLOO(Integer.parseInt(valueGroupsLOOTextField.getText())));
+                            break;
+                        case "Recall":
+                            bayesianComparator(recallGroupsLOO(Integer.parseInt(valueGroupsLOOTextField.getText())));
+                            break;
+                        case "MAE":
+                            bayesianComparator(maeGroupsLOO(Integer.parseInt(valueGroupsLOOTextField.getText())));
+                            break;
+                        case "RMSE":
+                            bayesianComparator(rmseGroupsLOO(Integer.parseInt(valueGroupsLOOTextField.getText())));
+                            break;
+                        default:
+                            break;
+                    }
+                } catch (InterruptedException | ExecutionException ex) {
+                    Logger.getLogger(AttrSelExp.class.getName()).log(Level.SEVERE, null, ex);
+                } catch (Exception ex) {
+                    Logger.getLogger(AttrSelExp.class.getName()).log(Level.SEVERE, null, ex);
+                }
+            }else {
+                try {
+                    switch ((String)metricStatisComboBox.getSelectedItem()) {
+                        case "F-measure":
+                            bayesianComparator(fMeasureStatis());
+                            break;
+                        case "Accuracy":
+                            bayesianComparator(accuracyStatis());
+                            break;
+                        case "Precision":
+                            bayesianComparator(precisionStatis());
+                            break;
+                        case "Recall":
+                            bayesianComparator(recallStatis());
+                            break;
+                        case "Kappa":
+                            bayesianComparator(kappaStatis());
+                            break;
+                        case "MCC":
+                            bayesianComparator(mccStatis());
+                            break;
+                        case "AUC":
+                            bayesianComparator(aucStatis());
+                            break;
+                        case "MAE":
+                            bayesianComparator(maeStatis());
+                            break;
+                        case "MSE":
+                            bayesianComparator(mseStatis());
+                            break;
+                        case "RMSE":
+                            bayesianComparator(rmseStatis());
+                            break;
+                        case "MAPE":
+                            bayesianComparator(mapeStatis());
+                            break;
+                        case "R2":
+                            bayesianComparator(r2Statis());
+                            break;
+                        default:
+                            break;
+                    }
+                } catch (InterruptedException | ExecutionException ex) {
+                    Logger.getLogger(AttrSelExp.class.getName()).log(Level.SEVERE, null, ex);
+                }
+            }
+        }
+    }//GEN-LAST:event_metricStatisComboBoxItemStateChanged
+
+    private void filterStatisComboBoxItemStateChanged(java.awt.event.ItemEvent evt) {//GEN-FIRST:event_filterStatisComboBoxItemStateChanged
+        if(evt.getStateChange() == ItemEvent.SELECTED) {
+            TableRowSorter<TableModel> modeloOrdenado = new TableRowSorter<TableModel>(statisticalTestTableModel);
+            statisticalTestTable.setRowSorter(modeloOrdenado);
+
+            switch ((String)filterStatisComboBox.getSelectedItem()) {
+                case "Positives":
+                    modeloOrdenado.setRowFilter(RowFilter.regexFilter("1|2", 9));
+                    break;
+                case "Negatives":
+                    modeloOrdenado.setRowFilter(RowFilter.regexFilter("0", 9));
+                    break;
+                default:
+                    modeloOrdenado.setRowFilter(RowFilter.regexFilter("0|1|2", 9));
+                    break;
+            }
+        }
+    }//GEN-LAST:event_filterStatisComboBoxItemStateChanged
+
+    private void saveCSVStatisBtnActionPerformed(java.awt.event.ActionEvent evt) {//GEN-FIRST:event_saveCSVStatisBtnActionPerformed
+        Instances inst = createObjectInstances(statisticalTestTableModel, "Statistical Test");
+        saveCSVTable(inst);
+    }//GEN-LAST:event_saveCSVStatisBtnActionPerformed
+
+    private void putPreprocessStatisBtnActionPerformed(java.awt.event.ActionEvent evt) {//GEN-FIRST:event_putPreprocessStatisBtnActionPerformed
+        Instances inst = createObjectInstances(statisticalTestTableModel, "Statistical Test");
+        getExplorer().getPreprocessPanel().setInstances(inst);
+    }//GEN-LAST:event_putPreprocessStatisBtnActionPerformed
+
+    private void bayesianComparator(List metrics){
+        try {
+            String contentFile = convertListMetricsToString(metrics);
+            /*Path path = Paths.get("");
+            String directoryName = path.toAbsolutePath().normalize().toString();*/
+            String tmpdir = System.getProperty("java.io.tmpdir");
+            File oldConf = new File(tmpdir + "\\metricsJava.txt");
+            oldConf.delete();
+            File conf = new File(tmpdir + "\\metricsJava.txt");
+            conf.setExecutable(true);
+            conf.setReadable(true);
+            conf.setWritable(true);
+            
+            BufferedWriter bw;
+            
+            if(!conf.exists()){
+                try {
+                    bw = new BufferedWriter(new FileWriter(conf));
+                    bw.write(contentFile, 0, contentFile.length());
+                    bw.close();
+                } catch (IOException ex) {
+                    m_Log.logMessage("Error creating metrics Java file");
+                    m_Log.logMessage("" + ex.getMessage());
+                    m_Log.logMessage("" + tmpdir);
+                    m_Log.statusMessage("See error log");
+                }
+            }
+            
+            String dir = System.getProperty("user.home");
+            String[] bayComp = new String[]{"python", dir + "\\wekafiles\\\\packages\\\\FS-Studio\\bayesianComparator.py", tmpdir};
+            
+            m_Log.logMessage("" + dir);
+              
+            Process proc = Runtime.getRuntime().exec(bayComp);
+            
+            proc.waitFor();
+            
+            File file = new File(tmpdir + "\\metricsPython.txt");
+            List<String> resultsBuff = new ArrayList();
+            BufferedReader br = new BufferedReader(new FileReader(file));
+            String line;
+
+            while ((line = br.readLine()) != null) {
+                resultsBuff.add(line);
+            }
+            
+            br.close();
+            
+            if(statisticalTestTableModel.getRowCount() > 0){
+                statisticalTestTableModel.setRowCount(0);
+            }
+            
+            List<String> com = new ArrayList<>();
+            
+            for(int i = 0; i < metricsTableModel.getRowCount(); i++){
+                for(int j = 0; j < metricsTableModel.getRowCount(); j++){
+                    if(!metricsTableModel.getValueAt(i, 1).equals("original") && !metricsTableModel.getValueAt(j, 1).equals("original") && i != j){
+                        com.add((String)metricsTableModel.getValueAt(i, 1) + " " +(String)metricsTableModel.getValueAt(i, 2) + " " +(String)metricsTableModel.getValueAt(i, 3) + ";" + (String)metricsTableModel.getValueAt(j, 1) + " " +(String)metricsTableModel.getValueAt(j, 2) + " " + (String)metricsTableModel.getValueAt(j, 3));
+                    }
+                }
+            }
+            
+            for(int i = 0; i < com.size(); i++){
+                String[] aux = com.get(i).split(";");
+                String[] aux1 = aux[0].split(" ");
+                String[] aux2 = aux[1].split(" ");
+                String[] metric = resultsBuff.get(i).replace("[" , "").replace("]", "").split(" ");
+                List<Double> max = new ArrayList<>();
+                max.add(Double.parseDouble(metric[0]));
+                max.add(Double.parseDouble(metric[1]));
+                max.add(Double.parseDouble(metric[2]));
+                
+                Collections.sort(max);
+                        
+                if(max.get(max.size()-1).equals(Double.parseDouble(metric[0]))){
+                    statisticalTestTableModel.addRow(new Object[]{aux1[0], aux1[1], aux1[2], aux2[0], aux2[1], aux2[2], metric[0], metric[1], metric[2], "1"});
+                }else if(max.get(max.size()-1).equals(Double.parseDouble(metric[1]))){
+                    statisticalTestTableModel.addRow(new Object[]{aux1[0], aux1[1], aux1[2], aux2[0], aux2[1], aux2[2], metric[0], metric[1], metric[2], "0"});
+                }else{
+                    statisticalTestTableModel.addRow(new Object[]{aux1[0], aux1[1], aux1[2], aux2[0], aux2[1], aux2[2], metric[0], metric[1], metric[2], "2"});
+                }
+            }
+        } catch (IOException | InterruptedException ex) {  
+            Logger.getLogger(AttrSelExp.class.getName()).log(Level.SEVERE, null, ex);
+        }
+    }
+    
+    private String convertListMetricsToString(List m){
+        String s = "";
+        
+        for(int i = 0; i < m.size(); i++){
+            s += m.get(i) + "\n";
+        }
+        
+        return s;
+    }
+    
+    private List fMeasureStatis() throws InterruptedException, ExecutionException{
+        List m = new ArrayList();
+        String s = "";
+        
+        for(int i = 0; i < listEvaluators.size(); i++){
+            String ev = getSpec(listEvaluators.get(i));
+            String se = getSpec(listSearchAlgorithms.get(i));
+            
+            for(int j = 0; j < listClassifier.size(); j++){
+                String c = getSpec(listClassifier.get(j));
+                
+                for(int z = 0; z < resultsAttrSelExp.size(); z++){
+                    Future<ResultsAttrSelExp> objectResult = resultsAttrSelExp.get(z);
+                
+                    if(objectResult.get().getEvaluator() != null && objectResult.get().getSearch() != null){
+                        if(ev.equals(getSpec(objectResult.get().getEvaluator())) && se.equals(getSpec(objectResult.get().getSearch())) && c.equals(getSpec(objectResult.get().getClassifier()))){
+                            Evaluation evalResult = objectResult.get().getEvalClassifier();
+
+                            if(evalResult != null){
+                                int index = foundInstances(objectResult.get().getInst());
+                                s += Double.toString(evalResult.fMeasure(listClassPositive.get(index))) + ";";
+                            }
+                        }
+                    }
+                }
+                
+                m.add(s);
+                s = "";
+            }
+        }
+        
+        return m;
+    }
+    
+    private List accuracyStatis() throws InterruptedException, ExecutionException{
+        List m = new ArrayList();
+        String s = "";
+        
+        for(int i = 0; i < listEvaluators.size(); i++){
+            String ev = getSpec(listEvaluators.get(i));
+            String se = getSpec(listSearchAlgorithms.get(i));
+            
+            for(int j = 0; j < listClassifier.size(); j++){
+                String c = getSpec(listClassifier.get(j));
+                
+                for(int z = 0; z < resultsAttrSelExp.size(); z++){
+                    Future<ResultsAttrSelExp> objectResult = resultsAttrSelExp.get(z);
+                
+                    if(objectResult.get().getEvaluator() != null && objectResult.get().getSearch() != null){
+                        if(ev.equals(getSpec(objectResult.get().getEvaluator())) && se.equals(getSpec(objectResult.get().getSearch())) && c.equals(getSpec(objectResult.get().getClassifier()))){
+                            Evaluation evalResult = objectResult.get().getEvalClassifier();
+
+                            if(evalResult != null){
+                                s += Double.toString(evalResult.pctCorrect()) + ";";
+                            }
+                        }
+                    }
+                }
+                
+                m.add(s);
+                s = "";
+            }
+        }
+        
+        return m;
+    }
+    
+    private List precisionStatis() throws InterruptedException, ExecutionException{
+        List m = new ArrayList();
+        String s = "";
+        
+        for(int i = 0; i < listEvaluators.size(); i++){
+            String ev = getSpec(listEvaluators.get(i));
+            String se = getSpec(listSearchAlgorithms.get(i));
+            
+            for(int j = 0; j < listClassifier.size(); j++){
+                String c = getSpec(listClassifier.get(j));
+                
+                for(int z = 0; z < resultsAttrSelExp.size(); z++){
+                    Future<ResultsAttrSelExp> objectResult = resultsAttrSelExp.get(z);
+                
+                    if(objectResult.get().getEvaluator() != null && objectResult.get().getSearch() != null){
+                        if(ev.equals(getSpec(objectResult.get().getEvaluator())) && se.equals(getSpec(objectResult.get().getSearch())) && c.equals(getSpec(objectResult.get().getClassifier()))){
+                            Evaluation evalResult = objectResult.get().getEvalClassifier();
+
+                            if(evalResult != null){
+                                int index = foundInstances(objectResult.get().getInst());
+                                s += Double.toString(evalResult.precision(listClassPositive.get(index))) + ";";
+                            }
+                        }
+                    }
+                }
+                
+                m.add(s);
+                s = "";
+            }
+        }
+        
+        return m;
+    }
+    
+    private List recallStatis() throws InterruptedException, ExecutionException{
+        List m = new ArrayList();
+        String s = "";
+        
+        for(int i = 0; i < listEvaluators.size(); i++){
+            String ev = getSpec(listEvaluators.get(i));
+            String se = getSpec(listSearchAlgorithms.get(i));
+            
+            for(int j = 0; j < listClassifier.size(); j++){
+                String c = getSpec(listClassifier.get(j));
+                
+                for(int z = 0; z < resultsAttrSelExp.size(); z++){
+                    Future<ResultsAttrSelExp> objectResult = resultsAttrSelExp.get(z);
+                
+                    if(objectResult.get().getEvaluator() != null && objectResult.get().getSearch() != null){
+                        if(ev.equals(getSpec(objectResult.get().getEvaluator())) && se.equals(getSpec(objectResult.get().getSearch())) && c.equals(getSpec(objectResult.get().getClassifier()))){
+                            Evaluation evalResult = objectResult.get().getEvalClassifier();
+
+                            if(evalResult != null){
+                                int index = foundInstances(objectResult.get().getInst());
+                                s += Double.toString(evalResult.recall(listClassPositive.get(index))) + ";";
+                            }
+                        }
+                    }
+                }
+                
+                m.add(s);
+                s = "";
+            }
+        }
+        
+        return m;
+    }
+    
+    private List kappaStatis() throws InterruptedException, ExecutionException{
+        List m = new ArrayList();
+        String s = "";
+        
+        for(int i = 0; i < listEvaluators.size(); i++){
+            String ev = getSpec(listEvaluators.get(i));
+            String se = getSpec(listSearchAlgorithms.get(i));
+            
+            for(int j = 0; j < listClassifier.size(); j++){
+                String c = getSpec(listClassifier.get(j));
+                
+                for(int z = 0; z < resultsAttrSelExp.size(); z++){
+                    Future<ResultsAttrSelExp> objectResult = resultsAttrSelExp.get(z);
+                
+                    if(objectResult.get().getEvaluator() != null && objectResult.get().getSearch() != null){
+                        if(ev.equals(getSpec(objectResult.get().getEvaluator())) && se.equals(getSpec(objectResult.get().getSearch())) && c.equals(getSpec(objectResult.get().getClassifier()))){
+                            Evaluation evalResult = objectResult.get().getEvalClassifier();
+
+                            if(evalResult != null){
+                                s += Double.toString(evalResult.kappa()) + ";";
+                            }
+                        }
+                    }
+                }
+                
+                m.add(s);
+                s = "";
+            }
+        }
+        
+        return m;
+    }
+    
+    private List mccStatis() throws InterruptedException, ExecutionException{
+        List m = new ArrayList();
+        String s = "";
+        
+        for(int i = 0; i < listEvaluators.size(); i++){
+            String ev = getSpec(listEvaluators.get(i));
+            String se = getSpec(listSearchAlgorithms.get(i));
+            
+            for(int j = 0; j < listClassifier.size(); j++){
+                String c = getSpec(listClassifier.get(j));
+                
+                for(int z = 0; z < resultsAttrSelExp.size(); z++){
+                    Future<ResultsAttrSelExp> objectResult = resultsAttrSelExp.get(z);
+                
+                    if(objectResult.get().getEvaluator() != null && objectResult.get().getSearch() != null){
+                        if(ev.equals(getSpec(objectResult.get().getEvaluator())) && se.equals(getSpec(objectResult.get().getSearch())) && c.equals(getSpec(objectResult.get().getClassifier()))){
+                            Evaluation evalResult = objectResult.get().getEvalClassifier();
+
+                            if(evalResult != null){
+                                int index = foundInstances(objectResult.get().getInst());
+                                s += Double.toString(evalResult.matthewsCorrelationCoefficient(listClassPositive.get(index))) + ";";
+                            }
+                        }
+                    }
+                }
+                
+                m.add(s);
+                s = "";
+            }
+        }
+        
+        return m;
+    }
+    
+    private List aucStatis() throws InterruptedException, ExecutionException{
+        List m = new ArrayList();
+        String s = "";
+        
+        for(int i = 0; i < listEvaluators.size(); i++){
+            String ev = getSpec(listEvaluators.get(i));
+            String se = getSpec(listSearchAlgorithms.get(i));
+            
+            for(int j = 0; j < listClassifier.size(); j++){
+                String c = getSpec(listClassifier.get(j));
+                
+                for(int z = 0; z < resultsAttrSelExp.size(); z++){
+                    Future<ResultsAttrSelExp> objectResult = resultsAttrSelExp.get(z);
+                
+                    if(objectResult.get().getEvaluator() != null && objectResult.get().getSearch() != null){
+                        if(ev.equals(getSpec(objectResult.get().getEvaluator())) && se.equals(getSpec(objectResult.get().getSearch())) && c.equals(getSpec(objectResult.get().getClassifier()))){
+                            Evaluation evalResult = objectResult.get().getEvalClassifier();
+
+                            if(evalResult != null){
+                                int index = foundInstances(objectResult.get().getInst());
+                                s += Double.toString(evalResult.areaUnderROC(listClassPositive.get(index))) + ";";
+                            }
+                        }
+                    }
+                }
+                
+                m.add(s);
+                s = "";
+            }
+        }
+        
+        return m;
+    }
+    
+    private List maeStatis() throws InterruptedException, ExecutionException{
+        List m = new ArrayList();
+        String s = "";
+        
+        for(int i = 0; i < listEvaluators.size(); i++){
+            String ev = getSpec(listEvaluators.get(i));
+            String se = getSpec(listSearchAlgorithms.get(i));
+            
+            for(int j = 0; j < listClassifier.size(); j++){
+                String c = getSpec(listClassifier.get(j));
+                
+                for(int z = 0; z < resultsAttrSelExp.size(); z++){
+                    Future<ResultsAttrSelExp> objectResult = resultsAttrSelExp.get(z);
+                
+                    if(objectResult.get().getEvaluator() != null && objectResult.get().getSearch() != null){
+                        if(ev.equals(getSpec(objectResult.get().getEvaluator())) && se.equals(getSpec(objectResult.get().getSearch())) && c.equals(getSpec(objectResult.get().getClassifier()))){
+                            Evaluation evalResult = objectResult.get().getEvalClassifier();
+
+                            if(evalResult != null){
+                                s += Double.toString(evalResult.meanAbsoluteError()) + ";";
+                            }
+                        }
+                    }
+                }
+                
+                m.add(s);
+                s = "";
+            }
+        }
+        
+        return m;
+    }
+    
+    private List mseStatis() throws InterruptedException, ExecutionException{
+        List m = new ArrayList();
+        String s = "";
+        
+        for(int i = 0; i < listEvaluators.size(); i++){
+            String ev = getSpec(listEvaluators.get(i));
+            String se = getSpec(listSearchAlgorithms.get(i));
+            
+            for(int j = 0; j < listClassifier.size(); j++){
+                String c = getSpec(listClassifier.get(j));
+                
+                for(int z = 0; z < resultsAttrSelExp.size(); z++){
+                    Future<ResultsAttrSelExp> objectResult = resultsAttrSelExp.get(z);
+                
+                    if(objectResult.get().getEvaluator() != null && objectResult.get().getSearch() != null){
+                        if(ev.equals(getSpec(objectResult.get().getEvaluator())) && se.equals(getSpec(objectResult.get().getSearch())) && c.equals(getSpec(objectResult.get().getClassifier()))){
+                            Evaluation evalResult = objectResult.get().getEvalClassifier();
+
+                            if(evalResult != null){
+                                s += Double.toString(Math.pow(evalResult.rootMeanSquaredError(), 2)) + ";";
+                            }
+                        }
+                    }
+                }
+                
+                m.add(s);
+                s = "";
+            }
+        }
+        
+        return m;
+    }
+    
+    private List rmseStatis() throws InterruptedException, ExecutionException{
+        List m = new ArrayList();
+        String s = "";
+        
+        for(int i = 0; i < listEvaluators.size(); i++){
+            String ev = getSpec(listEvaluators.get(i));
+            String se = getSpec(listSearchAlgorithms.get(i));
+            
+            for(int j = 0; j < listClassifier.size(); j++){
+                String c = getSpec(listClassifier.get(j));
+                
+                for(int z = 0; z < resultsAttrSelExp.size(); z++){
+                    Future<ResultsAttrSelExp> objectResult = resultsAttrSelExp.get(z);
+                
+                    if(objectResult.get().getEvaluator() != null && objectResult.get().getSearch() != null){
+                        if(ev.equals(getSpec(objectResult.get().getEvaluator())) && se.equals(getSpec(objectResult.get().getSearch())) && c.equals(getSpec(objectResult.get().getClassifier()))){
+                            Evaluation evalResult = objectResult.get().getEvalClassifier();
+
+                            if(evalResult != null){
+                                s += Double.toString(evalResult.rootMeanSquaredError()) + ";";
+                            }
+                        }
+                    }
+                }
+                
+                m.add(s);
+                s = "";
+            }
+        }
+        
+        return m;
+    }
+    
+    private List mapeStatis() throws InterruptedException, ExecutionException{
+        List m = new ArrayList();
+        String s = "";
+        int size = 0;
+        
+        for(int i = 0; i < listEvaluators.size(); i++){
+            String ev = getSpec(listEvaluators.get(i));
+            String se = getSpec(listSearchAlgorithms.get(i));
+            
+            for(int j = 0; j < listClassifier.size(); j++){
+                String c = getSpec(listClassifier.get(j));
+                
+                for(int z = 0; z < resultsAttrSelExp.size(); z++){
+                    Future<ResultsAttrSelExp> objectResult = resultsAttrSelExp.get(z);
+                
+                    if(objectResult.get().getEvaluator() != null && objectResult.get().getSearch() != null){
+                        if(ev.equals(getSpec(objectResult.get().getEvaluator())) && se.equals(getSpec(objectResult.get().getSearch())) && c.equals(getSpec(objectResult.get().getClassifier()))){
+                            Evaluation evalResult = objectResult.get().getEvalClassifier();
+
+                            if(evalResult != null){
+                                double aux = 0.0;
+
+                                List<Prediction> valuesPredict = evalResult.predictions();
+
+                                for(int e = 0; e < valuesPredict.size(); e++){
+                                    aux += Math.abs(valuesPredict.get(e).actual() - valuesPredict.get(e).predicted())/valuesPredict.get(e).predicted();
+                                    size++;
+                                }
+
+                                s += Double.toString((aux/size)*100) + ";";
+                                size = 0;
+                            }
+                        }
+                    }
+                }
+                
+                m.add(s);
+                s = "";
+            }
+        }
+        
+        return m;
+    }
+    
+    private List r2Statis() throws InterruptedException, ExecutionException{
+        List m = new ArrayList();
+        String s = "";
+        
+        for(int i = 0; i < listEvaluators.size(); i++){
+            String ev = getSpec(listEvaluators.get(i));
+            String se = getSpec(listSearchAlgorithms.get(i));
+            
+            for(int j = 0; j < listClassifier.size(); j++){
+                String c = getSpec(listClassifier.get(j));
+                
+                for(int z = 0; z < resultsAttrSelExp.size(); z++){
+                    Future<ResultsAttrSelExp> objectResult = resultsAttrSelExp.get(z);
+                
+                    if(objectResult.get().getEvaluator() != null && objectResult.get().getSearch() != null){
+                        if(ev.equals(getSpec(objectResult.get().getEvaluator())) && se.equals(getSpec(objectResult.get().getSearch())) && c.equals(getSpec(objectResult.get().getClassifier()))){
+                            Evaluation evalResult = objectResult.get().getEvalClassifier();
+
+                            if(evalResult != null){
+                                try {
+                                    s += Double.toString(evalResult.correlationCoefficient()) + ";";
+                                } catch (Exception ex) {
+                                    s += "0.0;";
+                                    Logger.getLogger(AttrSelExp.class.getName()).log(Level.SEVERE, null, ex);
+                                }
+                            }
+                        }
+                    }
+                }
+                
+                m.add(s);
+                s = "";
+            }
+        }
+        
+        return m;
+    }
+    
+    private List fMeasureGroupsLOO(int groups) throws InterruptedException, ExecutionException, Exception{
+        List m = new ArrayList();
+        String s = "";
+        ConfusionMatrix confM;
+        
+        for(int i = 0; i < listEvaluators.size(); i++){
+            String ev = getSpec(listEvaluators.get(i));
+            String se = getSpec(listSearchAlgorithms.get(i));
+            
+            for(int j = 0; j < listClassifier.size(); j++){
+                String c = getSpec(listClassifier.get(j));
+                
+                for(int z = 0; z < resultsAttrSelExp.size(); z++){
+                    Future<ResultsAttrSelExp> objectResult = resultsAttrSelExp.get(z);
+                
+                    if(objectResult.get().getEvaluator() != null && objectResult.get().getSearch() != null){
+                        if(ev.equals(getSpec(objectResult.get().getEvaluator())) && se.equals(getSpec(objectResult.get().getSearch())) && c.equals(getSpec(objectResult.get().getClassifier()))){
+                            Evaluation evalResult = objectResult.get().getEvalClassifier();
+
+                            if(evalResult != null){
+                                int indexPos = foundInstances(objectResult.get().getInst());
+                                List<Prediction> valuesPredict = evalResult.predictions();
+                                List<Prediction> aux = new ArrayList<>();
+                                int last = 0;
+                                int cont = objectResult.get().getInst().numInstances()/groups;
+                                int index = objectResult.get().getInst().classIndex();
+                                String[] classNames = new String[objectResult.get().getInst().attribute(index).numValues()];
+                                
+                                for(int value = 0; value < objectResult.get().getInst().attribute(index).numValues(); value++){
+                                    classNames[value] = objectResult.get().getInst().attribute(index).value(value);
+                                }
+
+                                for(int rest = 0; rest < cont; rest++){
+                                    if((last+groups) < valuesPredict.size()){
+                                        for(int g = last; g < (last+groups); g++){
+                                            aux.add(valuesPredict.get(g));
+                                        }
+
+                                        confM = new ConfusionMatrix(classNames);
+                                        
+                                        confM.addPredictions((ArrayList<Prediction>) aux);
+                                        
+                                        if(Double.isNaN(confM.getTwoClassStats(indexPos).getFMeasure())){
+                                            s += "0;";
+                                        }else{
+                                            s += confM.getTwoClassStats(indexPos).getFMeasure() + ";";
+                                        }
+                                        
+                                        aux.clear();
+                                        last += groups;
+                                    }
+                                }
+                                
+                                if(last < valuesPredict.size()){
+                                    for(int g = last; g < valuesPredict.size(); g++){
+                                        aux.add(valuesPredict.get(g));
+                                    }
+                                    
+                                    confM = new ConfusionMatrix(classNames);
+                                    
+                                    confM.addPredictions((ArrayList<Prediction>) aux);
+                                    
+                                    if(Double.isNaN(confM.getTwoClassStats(indexPos).getFMeasure())){
+                                        s += "0;";
+                                    }else{
+                                        s += confM.getTwoClassStats(indexPos).getFMeasure() + ";";
+                                    }
+                                    
+                                    aux.clear();
+                                }
+                            }
+                        }
+                    }
+                }
+                
+                m.add(s);
+                s = "";
+            }
+        }
+        
+        return m;
+    }
+    
+    private List precisionGroupsLOO(int groups) throws InterruptedException, ExecutionException, Exception{
+        List m = new ArrayList();
+        String s = "";
+        ConfusionMatrix confM;
+        
+        for(int i = 0; i < listEvaluators.size(); i++){
+            String ev = getSpec(listEvaluators.get(i));
+            String se = getSpec(listSearchAlgorithms.get(i));
+            
+            for(int j = 0; j < listClassifier.size(); j++){
+                String c = getSpec(listClassifier.get(j));
+                
+                for(int z = 0; z < resultsAttrSelExp.size(); z++){
+                    Future<ResultsAttrSelExp> objectResult = resultsAttrSelExp.get(z);
+                
+                    if(objectResult.get().getEvaluator() != null && objectResult.get().getSearch() != null){
+                        if(ev.equals(getSpec(objectResult.get().getEvaluator())) && se.equals(getSpec(objectResult.get().getSearch())) && c.equals(getSpec(objectResult.get().getClassifier()))){
+                            Evaluation evalResult = objectResult.get().getEvalClassifier();
+
+                            if(evalResult != null){
+                                int indexPos = foundInstances(objectResult.get().getInst());
+                                List<Prediction> valuesPredict = evalResult.predictions();
+                                List<Prediction> aux = new ArrayList<>();
+                                int last = 0;
+                                int cont = objectResult.get().getInst().numInstances()/groups;
+                                int index = objectResult.get().getInst().classIndex();
+                                String[] classNames = new String[objectResult.get().getInst().attribute(index).numValues()];
+                                
+                                for(int value = 0; value < objectResult.get().getInst().attribute(index).numValues(); value++){
+                                    classNames[value] = objectResult.get().getInst().attribute(index).value(value);
+                                }
+
+                                for(int rest = 0; rest < cont; rest++){
+                                    if((last+groups) < valuesPredict.size()){
+                                        for(int g = last; g < (last+groups); g++){
+                                            aux.add(valuesPredict.get(g));
+                                        }
+
+                                        confM = new ConfusionMatrix(classNames);
+                                        
+                                        confM.addPredictions((ArrayList<Prediction>) aux);
+                                        
+                                        if(Double.isNaN(confM.getTwoClassStats(indexPos).getPrecision())){
+                                            s += "0;";
+                                        }else{
+                                            s += confM.getTwoClassStats(indexPos).getPrecision() + ";";
+                                        }
+                                        
+                                        aux.clear();
+                                        last += groups;
+                                    }
+                                }
+                                
+                                if(last < valuesPredict.size()){
+                                    for(int g = last; g < valuesPredict.size(); g++){
+                                        aux.add(valuesPredict.get(g));
+                                    }
+                                    
+                                    confM = new ConfusionMatrix(classNames);
+                                    
+                                    confM.addPredictions((ArrayList<Prediction>) aux);
+                                    
+                                    if(Double.isNaN(confM.getTwoClassStats(indexPos).getPrecision())){
+                                        s += "0;";
+                                    }else{
+                                        s += confM.getTwoClassStats(indexPos).getPrecision() + ";";
+                                    }
+                                    
+                                    aux.clear();
+                                }
+                            }
+                        }
+                    }
+                }
+                
+                m.add(s);
+                s = "";
+            }
+        }
+        
+        return m;
+    }
+    
+    private List recallGroupsLOO(int groups) throws InterruptedException, ExecutionException, Exception{
+        List m = new ArrayList();
+        String s = "";
+        ConfusionMatrix confM;
+        
+        for(int i = 0; i < listEvaluators.size(); i++){
+            String ev = getSpec(listEvaluators.get(i));
+            String se = getSpec(listSearchAlgorithms.get(i));
+            
+            for(int j = 0; j < listClassifier.size(); j++){
+                String c = getSpec(listClassifier.get(j));
+                
+                for(int z = 0; z < resultsAttrSelExp.size(); z++){
+                    Future<ResultsAttrSelExp> objectResult = resultsAttrSelExp.get(z);
+                
+                    if(objectResult.get().getEvaluator() != null && objectResult.get().getSearch() != null){
+                        if(ev.equals(getSpec(objectResult.get().getEvaluator())) && se.equals(getSpec(objectResult.get().getSearch())) && c.equals(getSpec(objectResult.get().getClassifier()))){
+                            Evaluation evalResult = objectResult.get().getEvalClassifier();
+
+                            if(evalResult != null){
+                                int indexPos = foundInstances(objectResult.get().getInst());
+                                List<Prediction> valuesPredict = evalResult.predictions();
+                                List<Prediction> aux = new ArrayList<>();
+                                int last = 0;
+                                int cont = objectResult.get().getInst().numInstances()/groups;
+                                int index = objectResult.get().getInst().classIndex();
+                                String[] classNames = new String[objectResult.get().getInst().attribute(index).numValues()];
+                                
+                                for(int value = 0; value < objectResult.get().getInst().attribute(index).numValues(); value++){
+                                    classNames[value] = objectResult.get().getInst().attribute(index).value(value);
+                                }
+
+                                for(int rest = 0; rest < cont; rest++){
+                                    if((last+groups) < valuesPredict.size()){
+                                        for(int g = last; g < (last+groups); g++){
+                                            aux.add(valuesPredict.get(g));
+                                        }
+
+                                        confM = new ConfusionMatrix(classNames);
+                                        
+                                        confM.addPredictions((ArrayList<Prediction>) aux);
+                                        
+                                        if(Double.isNaN(confM.getTwoClassStats(indexPos).getRecall())){
+                                            s += "0;";
+                                        }else{
+                                            s += confM.getTwoClassStats(indexPos).getRecall() + ";";
+                                        }
+                                        
+                                        aux.clear();
+                                        last += groups;
+                                    }
+                                }
+                                
+                                if(last < valuesPredict.size()){
+                                    for(int g = last; g < valuesPredict.size(); g++){
+                                        aux.add(valuesPredict.get(g));
+                                    }
+                                    
+                                    confM = new ConfusionMatrix(classNames);
+                                    
+                                    confM.addPredictions((ArrayList<Prediction>) aux);
+                                    
+                                    if(Double.isNaN(confM.getTwoClassStats(indexPos).getRecall())){
+                                        s += "0;";
+                                    }else{
+                                        s += confM.getTwoClassStats(indexPos).getRecall() + ";";
+                                    }
+                                    
+                                    aux.clear();
+                                }
+                            }
+                        }
+                    }
+                }
+                
+                m.add(s);
+                s = "";
+            }
+        }
+        
+        return m;
+    }
+    
+    private List maeGroupsLOO(int groups) throws InterruptedException, ExecutionException, Exception{
+        List m = new ArrayList();
+        String s = "";
+        
+        for(int i = 0; i < listEvaluators.size(); i++){
+            String ev = getSpec(listEvaluators.get(i));
+            String se = getSpec(listSearchAlgorithms.get(i));
+            
+            for(int j = 0; j < listClassifier.size(); j++){
+                String c = getSpec(listClassifier.get(j));
+                
+                for(int z = 0; z < resultsAttrSelExp.size(); z++){
+                    Future<ResultsAttrSelExp> objectResult = resultsAttrSelExp.get(z);
+                
+                    if(objectResult.get().getEvaluator() != null && objectResult.get().getSearch() != null){
+                        if(ev.equals(getSpec(objectResult.get().getEvaluator())) && se.equals(getSpec(objectResult.get().getSearch())) && c.equals(getSpec(objectResult.get().getClassifier()))){
+                            Evaluation evalResult = objectResult.get().getEvalClassifier();
+
+                            if(evalResult != null){
+                                List<Prediction> valuesPredict = evalResult.predictions();
+                                List<Prediction> aux = new ArrayList<>();
+                                int last = 0;
+                                int cont = objectResult.get().getInst().numInstances()/groups;
+
+                                for(int rest = 0; rest < cont; rest++){
+                                    if((last+groups) < valuesPredict.size()){
+                                        for(int g = last; g < (last+groups); g++){
+                                            aux.add(valuesPredict.get(g));
+                                        }
+
+                                        double sumatorio = 0.0;
+                                        
+                                        for(int a = 0; a < aux.size(); a++){
+                                            sumatorio += Math.abs(aux.get(a).actual() - aux.get(a).predicted());
+                                        }
+                                        
+                                        double mae = (1/groups) * sumatorio;
+                                        
+                                        s += mae + ";";
+                                        aux.clear();
+                                        last += groups;
+                                    }
+                                }
+                                
+                                if(last < valuesPredict.size()){
+                                    for(int g = last; g < valuesPredict.size(); g++){
+                                        aux.add(valuesPredict.get(g));
+                                    }
+                                    
+                                    double sumatorio = 0.0;
+                                        
+                                    for(int a = 0; a < aux.size(); a++){
+                                        sumatorio += Math.abs(aux.get(a).actual() - aux.get(a).predicted());
+                                    }
+
+                                    double mae = (1/groups) * sumatorio;
+
+                                    s += mae + ";";
+                                    
+                                    aux.clear();
+                                }
+                            }
+                        }
+                    }
+                }
+                
+                m.add(s);
+                s = "";
+            }
+        }
+        
+        return m;
+    }
+    
+    private List rmseGroupsLOO(int groups) throws InterruptedException, ExecutionException, Exception{
+        List m = new ArrayList();
+        String s = "";
+        
+        for(int i = 0; i < listEvaluators.size(); i++){
+            String ev = getSpec(listEvaluators.get(i));
+            String se = getSpec(listSearchAlgorithms.get(i));
+            
+            for(int j = 0; j < listClassifier.size(); j++){
+                String c = getSpec(listClassifier.get(j));
+                
+                for(int z = 0; z < resultsAttrSelExp.size(); z++){
+                    Future<ResultsAttrSelExp> objectResult = resultsAttrSelExp.get(z);
+                
+                    if(objectResult.get().getEvaluator() != null && objectResult.get().getSearch() != null){
+                        if(ev.equals(getSpec(objectResult.get().getEvaluator())) && se.equals(getSpec(objectResult.get().getSearch())) && c.equals(getSpec(objectResult.get().getClassifier()))){
+                            Evaluation evalResult = objectResult.get().getEvalClassifier();
+
+                            if(evalResult != null){
+                                List<Prediction> valuesPredict = evalResult.predictions();
+                                List<Prediction> aux = new ArrayList<>();
+                                int last = 0;
+                                int cont = objectResult.get().getInst().numInstances()/groups;
+
+                                for(int rest = 0; rest < cont; rest++){
+                                    if((last+groups) < valuesPredict.size()){
+                                        for(int g = last; g < (last+groups); g++){
+                                            aux.add(valuesPredict.get(g));
+                                        }
+
+                                        double sumatorio = 0.0;
+                                        
+                                        for(int a = 0; a < aux.size(); a++){
+                                            sumatorio += Math.pow(Math.abs(aux.get(a).actual() - aux.get(a).predicted()), 2);
+                                        }
+                                        
+                                        double rmse = Math.sqrt(sumatorio/groups);
+                                        
+                                        s += rmse + ";";
+                                        aux.clear();
+                                        last += groups;
+                                    }
+                                }
+                                
+                                if(last < valuesPredict.size()){
+                                    for(int g = last; g < valuesPredict.size(); g++){
+                                        aux.add(valuesPredict.get(g));
+                                    }
+                                    
+                                    double sumatorio = 0.0;
+                                        
+                                    for(int a = 0; a < aux.size(); a++){
+                                        sumatorio += Math.pow(Math.abs(aux.get(a).actual() - aux.get(a).predicted()), 2);
+                                    }
+
+                                    double rmse = Math.sqrt(sumatorio/groups);
+
+                                    s += rmse + ";";
+                                    
+                                    aux.clear();
+                                }
+                            }
+                        }
+                    }
+                }
+                
+                m.add(s);
+                s = "";
+            }
+        }
+        
+        return m;
+    }
+    
     private void addInstancesToDatasetList (Instances dataset, int positiveClass) {
         dataset.setClassIndex(dataset.numAttributes() - 1);
 
@@ -2409,9 +4082,43 @@ attrSelExpTabs.addTab("Results", results);
     private void completeTabResult() throws InterruptedException, ExecutionException{
         if(checkResult()){
             resetTabResult();
+
+            int contEV = 1;
+            
+            for(int i = 0; i < listEvaluators.size(); i++){
+                if(!captionEV.containsValue(getSpec(listEvaluators.get(i)))){
+                    captionEV.put("E"+contEV, getSpec(listEvaluators.get(i)));
+                    contEV++;
+                }
+                              
+                captionSE.put("S"+(i+1), getSpec(listSearchAlgorithms.get(i)));
+            }
+            
+            for(int i = 0; i < listClassifier.size(); i++){
+                captionCL.put("C"+(i+1), getSpec(listClassifier.get(i)));
+            }
+            
+            completeCaptionTable();
             completePredictionPanel();
             completeMetricsTable();
             completeGraphComboBox();
+            completeStatisticalTestPanel();
+        }
+    }
+    
+    private void completeCaptionTable(){
+        //caption evaluator and search
+        for(int i = 0; i < captionEV.size(); i++){
+            captionTableModel.addRow(new Object[]{"E" + (i+1), captionEV.get("E" + (i+1))});
+        }
+        
+        for(int i = 0; i < captionSE.size(); i++){
+            captionTableModel.addRow(new Object[]{"S" + (i+1), captionSE.get("S" + (i+1))});
+        }
+        
+        //caption classifier
+        for(int i = 0; i < captionCL.size(); i++){
+            captionTableModel.addRow(new Object[]{"C" + (i+1), captionCL.get("C" + (i+1))});
         }
     }
     
@@ -2421,10 +4128,14 @@ attrSelExpTabs.addTab("Results", results);
             datasetsListModel.addElement(listInstances.get(d).relationName());
         }
         
-        //complete lists of evaluators and searchs, have same size
-        for(int e = 0; e < listEvaluators.size(); e++){
-            evaluatorListModel.addElement(getSpec(listEvaluators.get(e)));
-            searchListModel.addElement(getSpec(listSearchAlgorithms.get(e)));
+        //complete lists of evaluators
+        for(int e = 0; e < captionEV.size(); e++){
+            evaluatorListModel.addElement("E"+(e+1));
+        }
+        
+        //complete lists of searchs
+        for(int i = 0; i < captionSE.size(); i++){
+            searchListModel.addElement("S"+(i+1));
         }
         
         //no attribute selection
@@ -2432,20 +4143,20 @@ attrSelExpTabs.addTab("Results", results);
         searchListModel.addElement("original");
         
         //complete list of classifiers
-        for(int c = 0; c < listClassifier.size(); c++){
-            classifierListModel.addElement(getSpec(listClassifier.get(c)));
+        for(int c = 0; c < captionCL.size(); c++){
+            classifierListModel.addElement("C"+(c+1));
         }
         
         for(int i = 0; i < resultsAttrSelExp.size(); i++){
             Future<ResultsAttrSelExp> objectResult = resultsAttrSelExp.get(i);
             String dS = objectResult.get().getInst().relationName();
-            String cls = getSpec(objectResult.get().getClassifier());
+            String cls = findAlgorithms(captionCL, getSpec(objectResult.get().getClassifier()));
             String eV = "original";
             String search = "original";
             
             if(objectResult.get().getEvaluator() != null){
-                eV = getSpec(objectResult.get().getEvaluator());
-                search = getSpec(objectResult.get().getSearch());
+                search = findAlgorithms(captionSE, getSpec(objectResult.get().getSearch()));
+                eV = findAlgorithms(captionEV, getSpec(objectResult.get().getEvaluator()));
             }
             
             Evaluation evalResult = objectResult.get().getEvalClassifier();
@@ -2468,18 +4179,157 @@ attrSelExpTabs.addTab("Results", results);
         selectAllIndices(classifierList, classifierListModel.getSize());
     }
     
-    private void completeMetricsTable() throws InterruptedException, ExecutionException{
-        for(int i = 0; i < resultsAttrSelExp.size(); i++){
-            Future<ResultsAttrSelExp> objectResult = resultsAttrSelExp.get(i);
+    private String findAlgorithms(Map<String, String> map, String s){
+        int i = 0;
+        boolean enc = false;
+        
+        Iterator it = map.values().iterator();
+        
+        while(it.hasNext() && !enc){
+            String aux = (String)it.next();
             
-            if(objectResult.get().getEvaluator() != null){
-                metricsTableModel.addRow(new Object[]{objectResult.get().getInst().relationName(), getSpec(objectResult.get().getEvaluator()),
-                    getSpec(objectResult.get().getSearch()), getSpec(objectResult.get().getClassifier()), objectResult.get().getNumAttr()});
-            }else{
-                metricsTableModel.addRow(new Object[]{objectResult.get().getInst().relationName(), "original",
-                "original", getSpec(objectResult.get().getClassifier()), objectResult.get().getNumAttr()});
+            if(aux.equals(s)){
+                enc = true;
+            }else {
+                i++;
             }
         }
+        
+        return (String) map.keySet().toArray()[i];
+    }
+    
+    private void completeStatisticalTestPanel(){
+        String[] dataComboBox;
+        
+        if(listInstances.get(0).classAttribute().isNominal()){
+            if(leaveOneOutBtn.isSelected()){
+                dataComboBox = new String[]{"Precision", "Recall", "F-measure"};
+            }else{
+                dataComboBox = new String[]{"Accuracy", "Precision", "F-measure", "Recall", "Kappa", "MCC", "AUC"};
+            }
+        }else{
+            if(leaveOneOutBtn.isSelected()){
+                dataComboBox = new String[]{"MAE", "RMSE"};
+            }else{
+                dataComboBox = new String[]{"MAE", "MSE", "RMSE", "MAPE", "R2"};
+            }
+        }
+
+        metricStatisComboBox.setModel(new DefaultComboBoxModel(dataComboBox));
+        
+        boolean dif = false;
+        int j = 1;
+        
+        if(listInstances.get(0).classAttribute().isNominal()){
+            while(j < listInstances.size() && !dif){
+                if(!listInstances.get(j).classAttribute().isNominal()){
+                    dif = true;
+                }
+                
+                j++;
+            }
+            
+            if(!dif){
+                metricStatisComboBox.setSelectedIndex(2);
+            }else{
+                m_Log.logMessage("Some of the datasets are not nominal, so the statistical test cannot be done.");
+            }
+        }else{
+            while(j < listInstances.size() && !dif){
+                if(listInstances.get(j).classAttribute().isNominal()){
+                    dif = true;
+                }
+                
+                j++;
+            }
+            
+            if(!dif){
+                metricStatisComboBox.setSelectedIndex(0);
+            }else{
+                m_Log.logMessage("Some of the datasets are not numeric, so the statistical test cannot be done.");
+            }
+        }
+        
+        numDatasetsStatisValue.setText(Integer.toString(listInstances.size()));
+        
+        if(holdOutSplitBtn.isSelected()){
+            numSamStatisValue.setText(Integer.toString(listInstances.size()));
+        }else{
+            if(crossValidationBtn.isSelected()){               
+                numSamStatisValue.setText(Integer.toString(Integer.parseInt(crossValidationTextField.getText())*listInstances.size()));
+            }else{
+                int sum = 0;
+                
+                for(int i = 0; i < listInstances.size(); i++){
+                    sum += listInstances.size();
+                }
+                
+                numSamStatisValue.setText(Integer.toString(sum));
+            }
+        }
+        
+        valueGroupsLOOTextField.setText("30");
+        
+        dataComboBox = new String[]{"All", "Positives", "Negatives"};
+
+        filterStatisComboBox.setModel(new DefaultComboBoxModel(dataComboBox));
+    }
+    
+    private void completeMetricsTable() throws InterruptedException, ExecutionException{
+        Future<ResultsAttrSelExp> objectResult = resultsAttrSelExp.get(0);
+        String e, s;
+        
+        if(objectResult.get().getEvaluator() != null){
+            e = findAlgorithms(captionEV, getSpec(objectResult.get().getEvaluator()));
+            s = findAlgorithms(captionSE, getSpec(objectResult.get().getSearch()));
+        }else{
+            e = "original";
+            s = "original";
+        }
+        
+        String c = findAlgorithms(captionCL, getSpec(objectResult.get().getClassifier()));
+        
+        if(objectResult.get().getEvaluator() != null){
+            metricsTableModel.addRow(new Object[]{objectResult.get().getInst().relationName(), e, s, c, objectResult.get().getNumAttr()});
+        }else{
+            metricsTableModel.addRow(new Object[]{objectResult.get().getInst().relationName(), "original",
+            "original", findAlgorithms(captionCL, getSpec(objectResult.get().getClassifier())), objectResult.get().getNumAttr()});
+        }
+             
+        for(int i = 1; i < resultsAttrSelExp.size(); i++){
+            objectResult = resultsAttrSelExp.get(i);
+            
+            if(objectResult.get().getEvaluator() != null){
+                e = findAlgorithms(captionEV, getSpec(objectResult.get().getEvaluator()));
+                s = findAlgorithms(captionSE, getSpec(objectResult.get().getSearch()));
+            }else{
+                e = "original";
+                s = "original";
+            }
+            
+            c = findAlgorithms(captionCL, getSpec(objectResult.get().getClassifier()));
+            
+            for(int j = 0; j < metricsTableModel.getRowCount(); j++){
+                if(!isDifferent(e, s, c, objectResult.get().getInst().relationName())){
+                    metricsTableModel.addRow(new Object[]{objectResult.get().getInst().relationName(), e, s, c, objectResult.get().getNumAttr()});   
+                }
+            }
+        }
+    }
+    
+    private boolean isDifferent(String ev, String se, String cls, String name){
+        boolean enc = false;
+        int e = 0;
+        
+        while(e < metricsTableModel.getRowCount() && !enc){
+            if(ev.equals(metricsTableModel.getValueAt(e, 1)) && se.equals(metricsTableModel.getValueAt(e, 2)) && cls.equals(metricsTableModel.getValueAt(e, 3)) && name.equals(metricsTableModel.getValueAt(e, 0))){
+                enc = true;
+            }
+            
+            e++;
+        }
+        
+        return enc;
     }
     
     private void completeGraphComboBox(){
@@ -2583,187 +4433,313 @@ attrSelExpTabs.addTab("Results", results);
     
     private List accuracy() throws InterruptedException, ExecutionException{
         List accuracy = new ArrayList(metricsTableModel.getRowCount());
-                
-        for(int i = 0; i < resultsAttrSelExp.size(); i++){
-            Future<ResultsAttrSelExp> objectResult = resultsAttrSelExp.get(i);
-            Evaluation evalResult = objectResult.get().getEvalClassifier();
+        double sum = 0.0;        
+        int same = 0;
+        
+        for(int j = 0; j < metricsTableModel.getRowCount(); j++){
+            for(int i = 0; i < resultsAttrSelExp.size(); i++){
+                Future<ResultsAttrSelExp> objectResult = resultsAttrSelExp.get(i);
+                String e, s;
 
-            if(evalResult != null && objectResult.get().getInst().classAttribute().isNominal()){
-                if(evalResult.predictions() != null){
-                    try{
-                        accuracy.add(evalResult.pctCorrect());
-                    } catch(Exception ex){
-                        accuracy.add(null);
-                        m_Log.logMessage("With " + objectResult.get().getInst().relationName() + ", " + 
-                            objectResult.get().getEvaluator().getClass().getSimpleName() + ", " +
-                            objectResult.get().getSearch().getClass().getSimpleName() + " and " + 
-                            objectResult.get().getClassifier().getClass().getSimpleName() +  
-                            " throw the exception: " + ex.getMessage());
-                    }   
+                if(objectResult.get().getEvaluator() != null){
+                    e = findAlgorithms(captionEV, getSpec(objectResult.get().getEvaluator()));
+                    s = findAlgorithms(captionSE, getSpec(objectResult.get().getSearch()));
                 }else{
-                    accuracy.add(null);
-                }  
-            }else{
-                accuracy.add(null);
+                    e = "original";
+                    s = "original";
+                }
+
+                String c = findAlgorithms(captionCL, getSpec(objectResult.get().getClassifier()));
+
+                if(e.equals(metricsTableModel.getValueAt(j, 1)) && s.equals(metricsTableModel.getValueAt(j, 2)) && c.equals(metricsTableModel.getValueAt(j, 3)) && objectResult.get().getInst().relationName().equals(metricsTableModel.getValueAt(j, 0))){
+                    Evaluation evalResult = objectResult.get().getEvalClassifier();
+
+                    if(evalResult != null && objectResult.get().getInst().classAttribute().isNominal()){
+                        if(evalResult.predictions() != null){
+                            try{
+                                sum += evalResult.pctCorrect();
+                            } catch(Exception ex){
+                                sum += 0;
+                                
+                                m_Log.logMessage("With " + objectResult.get().getInst().relationName() + ", " + 
+                                    objectResult.get().getEvaluator().getClass().getSimpleName() + ", " +
+                                    objectResult.get().getSearch().getClass().getSimpleName() + " and " + 
+                                    objectResult.get().getClassifier().getClass().getSimpleName() +  
+                                    " throw the exception: " + ex.getMessage());
+                            }   
+                        }else{
+                            sum += 0;
+                        }  
+                    }else{
+                        sum += 0;
+                    }
+                    
+                    same++;
+                }
             }
+            
+            accuracy.add(sum/same);
+            same = 0;
+            sum = 0.0;
         }
         
         return accuracy;
     }
     
     private List  precision() throws InterruptedException, ExecutionException{
-        List precision = new ArrayList<>();
-                
-        for(int i = 0; i < resultsAttrSelExp.size(); i++){
-            Future<ResultsAttrSelExp> objectResult = resultsAttrSelExp.get(i);
-            Evaluation evalResult = objectResult.get().getEvalClassifier();
+        List precision = new ArrayList<>();       
+        double sum = 0.0;        
+        int same = 0;
+        
+        for(int j = 0; j < metricsTableModel.getRowCount(); j++){
+            for(int i = 0; i < resultsAttrSelExp.size(); i++){
+                Future<ResultsAttrSelExp> objectResult = resultsAttrSelExp.get(i);
+                String e, s;
 
-           try {
-                if(evalResult != null && objectResult.get().getInst().classAttribute().isNominal()){
-                    if(evalResult.predictions() != null){
-                        try{
-                            int index = foundInstances(objectResult.get().getInst());
-                            precision.add(evalResult.precision(listClassPositive.get(index)));
-                        } catch(Exception ex){
-                            precision.add(null);
-                            m_Log.logMessage("With " + objectResult.get().getInst().relationName() + ", " + 
-                                objectResult.get().getEvaluator().getClass().getSimpleName() + ", " +
-                                objectResult.get().getSearch().getClass().getSimpleName() + " and " + 
-                                objectResult.get().getClassifier().getClass().getSimpleName() +  
-                                " throw the exception: " + ex.getMessage());
-                        }     
-                    }else{
-                        precision.add(null);
-                    }
+                if(objectResult.get().getEvaluator() != null){
+                    e = findAlgorithms(captionEV, getSpec(objectResult.get().getEvaluator()));
+                    s = findAlgorithms(captionSE, getSpec(objectResult.get().getSearch()));
                 }else{
-                    precision.add(null);
+                    e = "original";
+                    s = "original";
                 }
-            } catch(InterruptedException | ExecutionException ex){
-                precision.add(null);
-            }  
+
+                String c = findAlgorithms(captionCL, getSpec(objectResult.get().getClassifier()));
+
+                if(e.equals(metricsTableModel.getValueAt(j, 1)) && s.equals(metricsTableModel.getValueAt(j, 2)) && c.equals(metricsTableModel.getValueAt(j, 3)) && objectResult.get().getInst().relationName().equals(metricsTableModel.getValueAt(j, 0))){
+                    Evaluation evalResult = objectResult.get().getEvalClassifier();
+
+                    if(evalResult != null && objectResult.get().getInst().classAttribute().isNominal()){
+                        if(evalResult.predictions() != null){
+                            try{
+                                int index = foundInstances(objectResult.get().getInst());
+                                sum += evalResult.precision(listClassPositive.get(index));
+                            } catch(InterruptedException | ExecutionException ex){
+                                sum += 0;
+                                
+                                m_Log.logMessage("With " + objectResult.get().getInst().relationName() + ", " + 
+                                    objectResult.get().getEvaluator().getClass().getSimpleName() + ", " +
+                                    objectResult.get().getSearch().getClass().getSimpleName() + " and " + 
+                                    objectResult.get().getClassifier().getClass().getSimpleName() +  
+                                    " throw the exception: " + ex.getMessage());
+                            }   
+                        }else{
+                            sum += 0;
+                        }  
+                    }else{
+                        sum += 0;
+                    }
+                    
+                    same++;
+                }
+            }
+            
+            precision.add(sum/same);
+            same = 0;
+            sum = 0.0;
         }
         
         return precision;
     }
     
     private List recall() throws InterruptedException, ExecutionException{
-        List recall = new ArrayList(metricsTableModel.getRowCount());
-                
-        for(int i = 0; i < resultsAttrSelExp.size(); i++){
-            Future<ResultsAttrSelExp> objectResult = resultsAttrSelExp.get(i);
-            Evaluation evalResult = objectResult.get().getEvalClassifier();
+        List recall = new ArrayList(metricsTableModel.getRowCount());               
+        double sum = 0.0;        
+        int same = 0;
+        
+        for(int j = 0; j < metricsTableModel.getRowCount(); j++){
+            for(int i = 0; i < resultsAttrSelExp.size(); i++){
+                Future<ResultsAttrSelExp> objectResult = resultsAttrSelExp.get(i);
+                String e, s;
 
-            if(evalResult != null && objectResult.get().getInst().classAttribute().isNominal()){
-                if(evalResult.predictions() != null){
-                    try{
-                        int index = foundInstances(objectResult.get().getInst());
-                        recall.add(evalResult.recall(listClassPositive.get(index)));
-                    } catch(Exception ex){
-                        recall.add(null);
-                        m_Log.logMessage("With " + objectResult.get().getInst().relationName() + ", " + 
-                            objectResult.get().getEvaluator().getClass().getSimpleName() + ", " +
-                            objectResult.get().getSearch().getClass().getSimpleName() + " and " + 
-                            objectResult.get().getClassifier().getClass().getSimpleName() +  
-                            " throw the exception: " + ex.getMessage());
-                    }   
+                if(objectResult.get().getEvaluator() != null){
+                    e = findAlgorithms(captionEV, getSpec(objectResult.get().getEvaluator()));
+                    s = findAlgorithms(captionSE, getSpec(objectResult.get().getSearch()));
                 }else{
-                    recall.add(null);
+                    e = "original";
+                    s = "original";
                 }
-            }else{
-                recall.add(null);
+
+                String c = findAlgorithms(captionCL, getSpec(objectResult.get().getClassifier()));
+
+                if(e.equals(metricsTableModel.getValueAt(j, 1)) && s.equals(metricsTableModel.getValueAt(j, 2)) && c.equals(metricsTableModel.getValueAt(j, 3)) && objectResult.get().getInst().relationName().equals(metricsTableModel.getValueAt(j, 0))){
+                    Evaluation evalResult = objectResult.get().getEvalClassifier();
+
+                    if(evalResult != null && objectResult.get().getInst().classAttribute().isNominal()){
+                        if(evalResult.predictions() != null){
+                            try{
+                                int index = foundInstances(objectResult.get().getInst());
+                                sum += evalResult.recall(listClassPositive.get(index));
+                            } catch(InterruptedException | ExecutionException ex){
+                                sum += 0;
+                                
+                                m_Log.logMessage("With " + objectResult.get().getInst().relationName() + ", " + 
+                                    objectResult.get().getEvaluator().getClass().getSimpleName() + ", " +
+                                    objectResult.get().getSearch().getClass().getSimpleName() + " and " + 
+                                    objectResult.get().getClassifier().getClass().getSimpleName() +  
+                                    " throw the exception: " + ex.getMessage());
+                            }   
+                        }else{
+                            sum += 0;
+                        }  
+                    }else{
+                        sum += 0;
+                    }
+                    
+                    same++;
+                }
             }
+            
+            recall.add(sum/same);
+            same = 0;
+            sum = 0.0;
         }
-                
+        
         return recall;
     }
     
     private List fMeasure() throws InterruptedException, ExecutionException{
-        List fMeasure = new ArrayList(metricsTableModel.getRowCount());
-                
-        for(int i = 0; i < resultsAttrSelExp.size(); i++){
-            Future<ResultsAttrSelExp> objectResult = resultsAttrSelExp.get(i);
-            Evaluation evalResult = objectResult.get().getEvalClassifier();
+        List fMeasure = new ArrayList(metricsTableModel.getRowCount());                
+        double sum = 0.0;        
+        int same = 0;
+        
+        for(int j = 0; j < metricsTableModel.getRowCount(); j++){
+            for(int i = 0; i < resultsAttrSelExp.size(); i++){
+                Future<ResultsAttrSelExp> objectResult = resultsAttrSelExp.get(i);
+                String e, s;
 
-            if(evalResult != null && objectResult.get().getInst().classAttribute().isNominal()){
-                if(evalResult.predictions() != null){
-                    try{
-                        int index = foundInstances(objectResult.get().getInst());
-                        fMeasure.add(evalResult.fMeasure(listClassPositive.get(index)));
-                    } catch(Exception ex){
-                        fMeasure.add(null);
-                        m_Log.logMessage("With " + objectResult.get().getInst().relationName() + ", " + 
-                            objectResult.get().getEvaluator().getClass().getSimpleName() + ", " +
-                            objectResult.get().getSearch().getClass().getSimpleName() + " and " + 
-                            objectResult.get().getClassifier().getClass().getSimpleName() +  
-                            " throw the exception: " + ex.getMessage());
-                    }
+                if(objectResult.get().getEvaluator() != null){
+                    e = findAlgorithms(captionEV, getSpec(objectResult.get().getEvaluator()));
+                    s = findAlgorithms(captionSE, getSpec(objectResult.get().getSearch()));
                 }else{
-                    fMeasure.add(null);
+                    e = "original";
+                    s = "original";
                 }
-            }else{
-                fMeasure.add(null);
+
+                String c = findAlgorithms(captionCL, getSpec(objectResult.get().getClassifier()));
+
+                if(e.equals(metricsTableModel.getValueAt(j, 1)) && s.equals(metricsTableModel.getValueAt(j, 2)) && c.equals(metricsTableModel.getValueAt(j, 3)) && objectResult.get().getInst().relationName().equals(metricsTableModel.getValueAt(j, 0))){
+                    Evaluation evalResult = objectResult.get().getEvalClassifier();
+
+                    if(evalResult != null && objectResult.get().getInst().classAttribute().isNominal()){
+                        if(evalResult.predictions() != null){
+                            try{
+                                int index = foundInstances(objectResult.get().getInst());
+                                sum += evalResult.fMeasure(listClassPositive.get(index));
+                            } catch(InterruptedException | ExecutionException ex){
+                                sum += 0;
+                                
+                                m_Log.logMessage("With " + objectResult.get().getInst().relationName() + ", " + 
+                                    objectResult.get().getEvaluator().getClass().getSimpleName() + ", " +
+                                    objectResult.get().getSearch().getClass().getSimpleName() + " and " + 
+                                    objectResult.get().getClassifier().getClass().getSimpleName() +  
+                                    " throw the exception: " + ex.getMessage());
+                            }   
+                        }else{
+                            sum += 0;
+                        }  
+                    }else{
+                        sum += 0;
+                    }
+                    
+                    same++;
+                }
             }
+            
+            fMeasure.add(sum/same);
+            same = 0;
+            sum = 0.0;
         }
-                
+        
         return fMeasure;
     }
     
     private List kappa() throws InterruptedException, ExecutionException{
         List kappa = new ArrayList(metricsTableModel.getRowCount());
-                
-        for(int i = 0; i < resultsAttrSelExp.size(); i++){
-            Future<ResultsAttrSelExp> objectResult = resultsAttrSelExp.get(i);
-            Evaluation evalResult = objectResult.get().getEvalClassifier();
+        double sum = 0.0;        
+        int same = 0;
+        
+        for(int j = 0; j < metricsTableModel.getRowCount(); j++){
+            for(int i = 0; i < resultsAttrSelExp.size(); i++){
+                Future<ResultsAttrSelExp> objectResult = resultsAttrSelExp.get(i);
+                String e, s;
 
-            if(evalResult != null && objectResult.get().getInst().classAttribute().isNominal()){
-                if(evalResult.predictions() != null){
-                    try{
-                        kappa.add(evalResult.kappa());
-                    } catch(Exception ex){
-                        kappa.add(null);
-                        m_Log.logMessage("With " + objectResult.get().getInst().relationName() + ", " + 
-                            objectResult.get().getEvaluator().getClass().getSimpleName() + ", " +
-                            objectResult.get().getSearch().getClass().getSimpleName() + " and " + 
-                            objectResult.get().getClassifier().getClass().getSimpleName() +  
-                            " throw the exception: " + ex.getMessage());
-                    }
+                if(objectResult.get().getEvaluator() != null){
+                    e = findAlgorithms(captionEV, getSpec(objectResult.get().getEvaluator()));
+                    s = findAlgorithms(captionSE, getSpec(objectResult.get().getSearch()));
                 }else{
-                    kappa.add(null);
+                    e = "original";
+                    s = "original";
                 }
-            }else{
-                kappa.add(null);
+
+                String c = findAlgorithms(captionCL, getSpec(objectResult.get().getClassifier()));
+
+                if(e.equals(metricsTableModel.getValueAt(j, 1)) && s.equals(metricsTableModel.getValueAt(j, 2)) && c.equals(metricsTableModel.getValueAt(j, 3)) && objectResult.get().getInst().relationName().equals(metricsTableModel.getValueAt(j, 0))){
+                    Evaluation evalResult = objectResult.get().getEvalClassifier();
+
+                    if(evalResult != null && objectResult.get().getInst().classAttribute().isNominal()){
+                        if(evalResult.predictions() != null){
+                            sum += evalResult.kappa();   
+                        }else{
+                            sum += 0;
+                        }  
+                    }else{
+                        sum += 0;
+                    }
+                    
+                    same++;
+                }
             }
+            
+            kappa.add(sum/same);
+            same = 0;
+            sum = 0.0;
         }
                 
         return kappa;
     }
     
     private List mcc() throws InterruptedException, ExecutionException{
-        List mcc = new ArrayList(metricsTableModel.getRowCount());
-                
-        for(int i = 0; i < resultsAttrSelExp.size(); i++){
-            Future<ResultsAttrSelExp> objectResult = resultsAttrSelExp.get(i);
-            Evaluation evalResult = objectResult.get().getEvalClassifier();
+        List mcc = new ArrayList(metricsTableModel.getRowCount());       
+        double sum = 0.0;        
+        int same = 0;
+        
+        for(int j = 0; j < metricsTableModel.getRowCount(); j++){
+            for(int i = 0; i < resultsAttrSelExp.size(); i++){
+                Future<ResultsAttrSelExp> objectResult = resultsAttrSelExp.get(i);
+                String e, s;
 
-            if(evalResult != null && objectResult.get().getInst().classAttribute().isNominal()){
-                if(evalResult.predictions() != null){
-                    try{
-                        int index = foundInstances(objectResult.get().getInst());
-                        mcc.add(evalResult.matthewsCorrelationCoefficient(listClassPositive.get(index)));
-                    } catch(Exception ex){
-                        mcc.add(null);
-                        m_Log.logMessage("With " + objectResult.get().getInst().relationName() + ", " + 
-                            objectResult.get().getEvaluator().getClass().getSimpleName() + ", " +
-                            objectResult.get().getSearch().getClass().getSimpleName() + " and " + 
-                            objectResult.get().getClassifier().getClass().getSimpleName() +  
-                            " throw the exception: " + ex.getMessage());
-                    }
+                if(objectResult.get().getEvaluator() != null){
+                    e = findAlgorithms(captionEV, getSpec(objectResult.get().getEvaluator()));
+                    s = findAlgorithms(captionSE, getSpec(objectResult.get().getSearch()));
                 }else{
-                    mcc.add(null);
+                    e = "original";
+                    s = "original";
                 }
-            }else{
-                mcc.add(null);
+
+                String c = findAlgorithms(captionCL, getSpec(objectResult.get().getClassifier()));
+
+                if(e.equals(metricsTableModel.getValueAt(j, 1)) && s.equals(metricsTableModel.getValueAt(j, 2)) && c.equals(metricsTableModel.getValueAt(j, 3)) && objectResult.get().getInst().relationName().equals(metricsTableModel.getValueAt(j, 0))){
+                    Evaluation evalResult = objectResult.get().getEvalClassifier();
+
+                    if(evalResult != null && objectResult.get().getInst().classAttribute().isNominal()){
+                        if(evalResult.predictions() != null){
+                            int index = foundInstances(objectResult.get().getInst());
+                            sum += evalResult.matthewsCorrelationCoefficient(listClassPositive.get(index));   
+                        }else{
+                            sum += 0;
+                        }  
+                    }else{
+                        sum += 0;
+                    }
+                    
+                    same++;
+                }
             }
+            
+            mcc.add(sum/same);
+            same = 0;
+            sum = 0.0;
         }
                 
         return mcc;
@@ -2771,30 +4747,45 @@ attrSelExpTabs.addTab("Results", results);
     
     private List auc() throws InterruptedException, ExecutionException{
         List auc = new ArrayList(metricsTableModel.getRowCount());
-                
-        for(int i = 0; i < resultsAttrSelExp.size(); i++){
-            Future<ResultsAttrSelExp> objectResult = resultsAttrSelExp.get(i);
-            Evaluation evalResult = objectResult.get().getEvalClassifier();
+        double sum = 0.0;        
+        int same = 0;
+        
+        for(int j = 0; j < metricsTableModel.getRowCount(); j++){
+            for(int i = 0; i < resultsAttrSelExp.size(); i++){
+                Future<ResultsAttrSelExp> objectResult = resultsAttrSelExp.get(i);
+                String e, s;
 
-            if(evalResult != null && objectResult.get().getInst().classAttribute().isNominal()){
-                if(evalResult.predictions() != null){
-                    try{
-                        int index = foundInstances(objectResult.get().getInst());
-                        auc.add(evalResult.areaUnderROC(listClassPositive.get(index)));
-                    } catch(Exception ex){
-                        auc.add(null);
-                        m_Log.logMessage("With " + objectResult.get().getInst().relationName() + ", " + 
-                            objectResult.get().getEvaluator().getClass().getSimpleName() + ", " +
-                            objectResult.get().getSearch().getClass().getSimpleName() + " and " + 
-                            objectResult.get().getClassifier().getClass().getSimpleName() +  
-                            " throw the exception: " + ex.getMessage());
-                    }
+                if(objectResult.get().getEvaluator() != null){
+                    e = findAlgorithms(captionEV, getSpec(objectResult.get().getEvaluator()));
+                    s = findAlgorithms(captionSE, getSpec(objectResult.get().getSearch()));
                 }else{
-                    auc.add(null);
+                    e = "original";
+                    s = "original";
                 }
-            }else{
-                auc.add(null);
+
+                String c = findAlgorithms(captionCL, getSpec(objectResult.get().getClassifier()));
+
+                if(e.equals(metricsTableModel.getValueAt(j, 1)) && s.equals(metricsTableModel.getValueAt(j, 2)) && c.equals(metricsTableModel.getValueAt(j, 3)) && objectResult.get().getInst().relationName().equals(metricsTableModel.getValueAt(j, 0))){
+                    Evaluation evalResult = objectResult.get().getEvalClassifier();
+
+                    if(evalResult != null && objectResult.get().getInst().classAttribute().isNominal()){
+                        if(evalResult.predictions() != null){
+                            int index = foundInstances(objectResult.get().getInst());
+                            sum += evalResult.areaUnderROC(listClassPositive.get(index));   
+                        }else{
+                            sum += 0;
+                        }  
+                    }else{
+                        sum += 0;
+                    }
+                    
+                    same++;
+                }
             }
+            
+            auc.add(sum/same);
+            same = 0;
+            sum = 0.0;
         }
                 
         return auc; 
@@ -2802,89 +4793,134 @@ attrSelExpTabs.addTab("Results", results);
     
     private List mae() throws InterruptedException, ExecutionException{
         List mae = new ArrayList(metricsTableModel.getRowCount());
-                
-        for(int i = 0; i < resultsAttrSelExp.size(); i++){
-            Future<ResultsAttrSelExp> objectResult = resultsAttrSelExp.get(i);
-            Evaluation evalResult = objectResult.get().getEvalClassifier();
+        double sum = 0.0;        
+        int same = 0;
+        
+        for(int j = 0; j < metricsTableModel.getRowCount(); j++){
+            for(int i = 0; i < resultsAttrSelExp.size(); i++){
+                Future<ResultsAttrSelExp> objectResult = resultsAttrSelExp.get(i);
+                String e, s;
 
-            if(evalResult != null && objectResult.get().getInst().classAttribute().isNumeric()){
-                if(evalResult.predictions() != null){
-                    try{
-                        mae.add(evalResult.meanAbsoluteError());
-                    } catch(Exception ex){
-                        mae.add(null);
-                        m_Log.logMessage("With " + objectResult.get().getInst().relationName() + ", " + 
-                            objectResult.get().getEvaluator().getClass().getSimpleName() + ", " +
-                            objectResult.get().getSearch().getClass().getSimpleName() + " and " + 
-                            objectResult.get().getClassifier().getClass().getSimpleName() +  
-                            " throw the exception: " + ex.getMessage());
-                    }
+                if(objectResult.get().getEvaluator() != null){
+                    e = findAlgorithms(captionEV, getSpec(objectResult.get().getEvaluator()));
+                    s = findAlgorithms(captionSE, getSpec(objectResult.get().getSearch()));
                 }else{
-                    mae.add(null);
+                    e = "original";
+                    s = "original";
                 }
-            }else{
-                mae.add(null);
+
+                String c = findAlgorithms(captionCL, getSpec(objectResult.get().getClassifier()));
+
+                if(e.equals(metricsTableModel.getValueAt(j, 1)) && s.equals(metricsTableModel.getValueAt(j, 2)) && c.equals(metricsTableModel.getValueAt(j, 3)) && objectResult.get().getInst().relationName().equals(metricsTableModel.getValueAt(j, 0))){
+                    Evaluation evalResult = objectResult.get().getEvalClassifier();
+
+                    if(evalResult != null && objectResult.get().getInst().classAttribute().isNominal()){
+                        if(evalResult.predictions() != null){
+                            sum += evalResult.meanAbsoluteError();   
+                        }else{
+                            sum += 0;
+                        }  
+                    }else{
+                        sum += 0;
+                    }
+                    
+                    same++;
+                }
             }
+            
+            mae.add(sum/same);
+            same = 0;
+            sum = 0.0;
         }
                 
         return mae; 
     }
     
     private List mse() throws InterruptedException, ExecutionException{
-        List mse = new ArrayList(metricsTableModel.getRowCount());
-                
-        for(int i = 0; i < resultsAttrSelExp.size(); i++){
-            Future<ResultsAttrSelExp> objectResult = resultsAttrSelExp.get(i);
-            Evaluation evalResult = objectResult.get().getEvalClassifier();
+        List mse = new ArrayList(metricsTableModel.getRowCount());  
+        double sum = 0.0;        
+        int same = 0;
+        
+        for(int j = 0; j < metricsTableModel.getRowCount(); j++){
+            for(int i = 0; i < resultsAttrSelExp.size(); i++){
+                Future<ResultsAttrSelExp> objectResult = resultsAttrSelExp.get(i);
+                String e, s;
 
-            if(evalResult != null && objectResult.get().getInst().classAttribute().isNumeric()){
-                if(evalResult.predictions() != null){
-                    try{
-                        mse.add(Math.pow(evalResult.rootMeanSquaredError(), 2));
-                    } catch(Exception ex){
-                        mse.add(null);
-                        m_Log.logMessage("With " + objectResult.get().getInst().relationName() + ", " + 
-                            objectResult.get().getEvaluator().getClass().getSimpleName() + ", " +
-                            objectResult.get().getSearch().getClass().getSimpleName() + " and " + 
-                            objectResult.get().getClassifier().getClass().getSimpleName() +  
-                            " throw the exception: " + ex.getMessage());
-                    }
+                if(objectResult.get().getEvaluator() != null){
+                    e = findAlgorithms(captionEV, getSpec(objectResult.get().getEvaluator()));
+                    s = findAlgorithms(captionSE, getSpec(objectResult.get().getSearch()));
                 }else{
-                    mse.add(null);
+                    e = "original";
+                    s = "original";
                 }
-            }else{
-                mse.add(null);
+
+                String c = findAlgorithms(captionCL, getSpec(objectResult.get().getClassifier()));
+
+                if(e.equals(metricsTableModel.getValueAt(j, 1)) && s.equals(metricsTableModel.getValueAt(j, 2)) && c.equals(metricsTableModel.getValueAt(j, 3)) && objectResult.get().getInst().relationName().equals(metricsTableModel.getValueAt(j, 0))){
+                    Evaluation evalResult = objectResult.get().getEvalClassifier();
+
+                    if(evalResult != null && objectResult.get().getInst().classAttribute().isNominal()){
+                        if(evalResult.predictions() != null){
+                            sum += Math.pow(evalResult.rootMeanSquaredError(), 2);   
+                        }else{
+                            sum += 0;
+                        }  
+                    }else{
+                        sum += 0;
+                    }
+                    
+                    same++;
+                }
             }
+            
+            mse.add(sum/same);
+            same = 0;
+            sum = 0.0;
         }
-                
+        
         return mse;
     }
     
     private List rmse() throws InterruptedException, ExecutionException{
         List rmse = new ArrayList(metricsTableModel.getRowCount());
-                
-        for(int i = 0; i < resultsAttrSelExp.size(); i++){
-            Future<ResultsAttrSelExp> objectResult = resultsAttrSelExp.get(i);
-            Evaluation evalResult = objectResult.get().getEvalClassifier();
+        double sum = 0.0;        
+        int same = 0;
+        
+        for(int j = 0; j < metricsTableModel.getRowCount(); j++){
+            for(int i = 0; i < resultsAttrSelExp.size(); i++){
+                Future<ResultsAttrSelExp> objectResult = resultsAttrSelExp.get(i);
+                String e, s;
 
-            if(evalResult != null && objectResult.get().getInst().classAttribute().isNumeric()){
-                if(evalResult.predictions() != null){
-                    try{
-                        rmse.add(evalResult.rootMeanSquaredError());
-                    } catch(Exception ex){
-                        rmse.add(null);
-                        m_Log.logMessage("With " + objectResult.get().getInst().relationName() + ", " + 
-                            objectResult.get().getEvaluator().getClass().getSimpleName() + ", " +
-                            objectResult.get().getSearch().getClass().getSimpleName() + " and " + 
-                            objectResult.get().getClassifier().getClass().getSimpleName() +  
-                            " throw the exception: " + ex.getMessage());
-                    }
+                if(objectResult.get().getEvaluator() != null){
+                    e = findAlgorithms(captionEV, getSpec(objectResult.get().getEvaluator()));
+                    s = findAlgorithms(captionSE, getSpec(objectResult.get().getSearch()));
                 }else{
-                    rmse.add(null);
+                    e = "original";
+                    s = "original";
                 }
-            }else{
-                rmse.add(null);
+
+                String c = findAlgorithms(captionCL, getSpec(objectResult.get().getClassifier()));
+
+                if(e.equals(metricsTableModel.getValueAt(j, 1)) && s.equals(metricsTableModel.getValueAt(j, 2)) && c.equals(metricsTableModel.getValueAt(j, 3)) && objectResult.get().getInst().relationName().equals(metricsTableModel.getValueAt(j, 0))){
+                    Evaluation evalResult = objectResult.get().getEvalClassifier();
+
+                    if(evalResult != null && objectResult.get().getInst().classAttribute().isNominal()){
+                        if(evalResult.predictions() != null){
+                            sum += evalResult.rootMeanSquaredError();   
+                        }else{
+                            sum += 0;
+                        }  
+                    }else{
+                        sum += 0;
+                    }
+                    
+                    same++;
+                }
             }
+            
+            rmse.add(sum/same);
+            same = 0;
+            sum = 0.0;
         }
                 
         return rmse;
@@ -2893,38 +4929,63 @@ attrSelExpTabs.addTab("Results", results);
     private List mape() throws InterruptedException, ExecutionException{
         List mape = new ArrayList(metricsTableModel.getRowCount());
         int size = 0;
+        double sum = 0.0;        
+        int same = 0;
+        
+        for(int j = 0; j < metricsTableModel.getRowCount(); j++){
+            for(int i = 0; i < resultsAttrSelExp.size(); i++){
+                Future<ResultsAttrSelExp> objectResult = resultsAttrSelExp.get(i);
+                String e, s;
 
-        for(int i = 0; i < resultsAttrSelExp.size(); i++){
-            Future<ResultsAttrSelExp> objectResult = resultsAttrSelExp.get(i);
-            Evaluation evalResult = objectResult.get().getEvalClassifier();
-
-            if(evalResult != null && objectResult.get().getInst().classAttribute().isNumeric()){
-                if(evalResult.predictions() != null){
-                    try{
-                        double aux = 0.0;
-
-                        List<Prediction> valuesPredict = evalResult.predictions();
-
-                        for(int z = 0; z < valuesPredict.size(); z++){
-                            aux += Math.abs(valuesPredict.get(z).actual() - valuesPredict.get(z).predicted())/valuesPredict.get(z).predicted();
-                            size++;
-                        }
-
-                        mape.add((aux/size)*100);
-                    } catch(Exception ex){
-                        mape.add(null);
-                        m_Log.logMessage("With " + objectResult.get().getInst().relationName() + ", " + 
-                            objectResult.get().getEvaluator().getClass().getSimpleName() + ", " +
-                            objectResult.get().getSearch().getClass().getSimpleName() + " and " + 
-                            objectResult.get().getClassifier().getClass().getSimpleName() +  
-                            " throw the exception: " + ex.getMessage());
-                    }
+                if(objectResult.get().getEvaluator() != null){
+                    e = findAlgorithms(captionEV, getSpec(objectResult.get().getEvaluator()));
+                    s = findAlgorithms(captionSE, getSpec(objectResult.get().getSearch()));
                 }else{
-                    mape.add(null);
+                    e = "original";
+                    s = "original";
                 }
-            }else{
-                mape.add(null);
+
+                String c = findAlgorithms(captionCL, getSpec(objectResult.get().getClassifier()));
+
+                if(e.equals(metricsTableModel.getValueAt(j, 1)) && s.equals(metricsTableModel.getValueAt(j, 2)) && c.equals(metricsTableModel.getValueAt(j, 3)) && objectResult.get().getInst().relationName().equals(metricsTableModel.getValueAt(j, 0))){
+                    Evaluation evalResult = objectResult.get().getEvalClassifier();
+
+                    if(evalResult != null && objectResult.get().getInst().classAttribute().isNominal()){
+                        if(evalResult.predictions() != null){
+                            try{
+                                double aux = 0.0;
+
+                                List<Prediction> valuesPredict = evalResult.predictions();
+
+                                for(int z = 0; z < valuesPredict.size(); z++){
+                                    aux += Math.abs(valuesPredict.get(z).actual() - valuesPredict.get(z).predicted())/valuesPredict.get(z).predicted();
+                                    size++;
+                                }
+
+                                sum += (aux/size)*100;
+                                size = 0;
+                            } catch(Exception ex){
+                                sum += 0;
+                                m_Log.logMessage("With " + objectResult.get().getInst().relationName() + ", " + 
+                                    objectResult.get().getEvaluator().getClass().getSimpleName() + ", " +
+                                    objectResult.get().getSearch().getClass().getSimpleName() + " and " + 
+                                    objectResult.get().getClassifier().getClass().getSimpleName() +  
+                                    " throw the exception: " + ex.getMessage());
+                            }
+                        }else{
+                            sum += 0;
+                        }  
+                    }else{
+                        sum += 0;
+                    }
+                    
+                    same++;
+                }
             }
+            
+            mape.add(sum/same);
+            same = 0;
+            sum = 0.0;
         }
                 
         return mape;
@@ -2932,22 +4993,52 @@ attrSelExpTabs.addTab("Results", results);
     
     private List r2() throws InterruptedException, ExecutionException{
         List r2 = new ArrayList(metricsTableModel.getRowCount());
-                
-        for(int i = 0; i < resultsAttrSelExp.size(); i++){
-            Future<ResultsAttrSelExp> objectResult = resultsAttrSelExp.get(i);
-            Evaluation evalResult = objectResult.get().getEvalClassifier();
+        double sum = 0.0;        
+        int same = 0;
+        
+        for(int j = 0; j < metricsTableModel.getRowCount(); j++){
+            for(int i = 0; i < resultsAttrSelExp.size(); i++){
+                Future<ResultsAttrSelExp> objectResult = resultsAttrSelExp.get(i);
+                String e, s;
 
-            //if the class is not numeric or there has been an error, throw an exception
-            try {
-                //if evalResult is null, go to catch
-                if(evalResult.predictions() != null){
-                    r2.add(evalResult.correlationCoefficient());
+                if(objectResult.get().getEvaluator() != null){
+                    e = findAlgorithms(captionEV, getSpec(objectResult.get().getEvaluator()));
+                    s = findAlgorithms(captionSE, getSpec(objectResult.get().getSearch()));
                 }else{
-                    r2.add(null);
+                    e = "original";
+                    s = "original";
                 }
-            } catch (Exception ex) {
-                r2.add(null);
+
+                String c = findAlgorithms(captionCL, getSpec(objectResult.get().getClassifier()));
+
+                if(e.equals(metricsTableModel.getValueAt(j, 1)) && s.equals(metricsTableModel.getValueAt(j, 2)) && c.equals(metricsTableModel.getValueAt(j, 3)) && objectResult.get().getInst().relationName().equals(metricsTableModel.getValueAt(j, 0))){
+                    Evaluation evalResult = objectResult.get().getEvalClassifier();
+
+                    if(evalResult != null && objectResult.get().getInst().classAttribute().isNominal()){
+                        if(evalResult.predictions() != null){
+                            try {   
+                                sum += evalResult.correlationCoefficient();
+                            } catch (Exception ex) {
+                                m_Log.logMessage("With " + objectResult.get().getInst().relationName() + ", " + 
+                                    objectResult.get().getEvaluator().getClass().getSimpleName() + ", " +
+                                    objectResult.get().getSearch().getClass().getSimpleName() + " and " + 
+                                    objectResult.get().getClassifier().getClass().getSimpleName() +  
+                                    " throw the exception: " + ex.getMessage());
+                            }
+                        }else{
+                            sum += 0;
+                        }  
+                    }else{
+                        sum += 0;
+                    }
+                    
+                    same++;
+                }
             }
+            
+            r2.add(sum/same);
+            same = 0;
+            sum = 0.0;
         }
                 
         return r2;
@@ -2959,7 +5050,7 @@ attrSelExpTabs.addTab("Results", results);
         for(int i = 0; i < tableModel.getColumnCount(); i++){
             Attribute a = null;
 
-            if(tableModel.getColumnName(i).equals("Actual value") || tableModel.getColumnName(i).equals("Predicted value") || tableModel.getColumnName(i).equals("Accuracy") || tableModel.getColumnName(i).equals("NumAttributes") || 
+            if(tableModel.getColumnName(i).equals("Actual") || tableModel.getColumnName(i).equals("Predicted") || tableModel.getColumnName(i).equals("Accuracy") || tableModel.getColumnName(i).equals("NumAttributes") || 
                 tableModel.getColumnName(i).equals("Precision") || tableModel.getColumnName(i).equals("Recall") || tableModel.getColumnName(i).equals("F-measure") || tableModel.getColumnName(i).equals("Kappa") ||
                 tableModel.getColumnName(i).equals("MCC") || tableModel.getColumnName(i).equals("AUC") || tableModel.getColumnName(i).equals("MAE") || tableModel.getColumnName(i).equals("MSE") || tableModel.getColumnName(i).equals("RMSE") ||
                 tableModel.getColumnName(i).equals("MAPE") || tableModel.getColumnName(i).equals("R2")){
@@ -2983,8 +5074,16 @@ attrSelExpTabs.addTab("Results", results);
                     values[c] = (double) tableModel.getValueAt(r, c);
                 }else if(tableModel.getValueAt(r, c) instanceof Integer){
                     values[c] = (int) tableModel.getValueAt(r, c);
-                }else if(tableModel.getValueAt(r, c) instanceof String){
-                    values[c] = tableInst.attribute(c).addStringValue((String)tableModel.getValueAt(r, c));
+                }else if(tableModel.getValueAt(r, c) instanceof String){                   
+                    if(tableModel.getColumnName(c).equals("Evaluator") && !(((String)tableModel.getValueAt(r, c)).equals("original"))){
+                        values[c] = tableInst.attribute(c).addStringValue(captionEV.get((String)tableModel.getValueAt(r, c)));
+                    }else if(tableModel.getColumnName(c).equals("Search") && !(((String)tableModel.getValueAt(r, c)).equals("original"))){
+                        values[c] = tableInst.attribute(c).addStringValue(captionSE.get((String)tableModel.getValueAt(r, c)));
+                    }else if(tableModel.getColumnName(c).equals("Classifier") && !(((String)tableModel.getValueAt(r, c)).equals("original"))){
+                        values[c] = tableInst.attribute(c).addStringValue(captionCL.get((String)tableModel.getValueAt(r, c)));
+                    }else{
+                        values[c] = tableInst.attribute(c).addStringValue((String)tableModel.getValueAt(r, c));
+                    }
                 }
             }
             
@@ -3027,6 +5126,127 @@ attrSelExpTabs.addTab("Results", results);
         if (returnVal == JFileChooser.APPROVE_OPTION) {
             DataSink.write(fileChooser.getSelectedFile() + ".arff", saveInst);
         }
+    }
+    
+    private void saveLatexTable(Instances saveInst, String tableName){
+        String initialDir = ExplorerDefaults.getInitialDirectory();
+        JFileChooser fileChooser = new JFileChooser(new File(initialDir));
+        fileChooser.setFileSelectionMode(JFileChooser.FILES_AND_DIRECTORIES);
+        FileNameExtensionFilter filter = new FileNameExtensionFilter("Latex", "tex");
+        fileChooser.setFileFilter(filter);
+        int returnVal = fileChooser.showSaveDialog(this);
+        
+        if (returnVal == JFileChooser.APPROVE_OPTION) {
+            String contentFile = instancesToLatex(saveInst, tableName);
+            File conf = new File(fileChooser.getSelectedFile() + ".tex");
+            
+            BufferedWriter bw;
+            
+            if(!conf.exists()){
+                try {
+                    bw = new BufferedWriter(new FileWriter(conf));
+                    bw.write(contentFile, 0, contentFile.length());
+                    bw.close();
+                } catch (IOException ex) {
+                    m_Log.logMessage("Error creating configuration file");
+                    m_Log.statusMessage("See error log");
+                }
+            }
+        }
+    }
+    
+    public static String instancesToLatex(Instances inst, String tableName){
+        int next = 0;
+        String latexContent = "\\begin{table}[ht]\n" +
+                            "\\begin{center}\n" +
+                            "\\setlength{\\tabcolsep}{10pt}\n" +
+                            "\\renewcommand{\\arraystretch}{1.5}\n" +
+                            "\\caption{Table caption.}\n" +
+                            "\\begin{tabular}{";
+        
+        if(tableName.equals("Metrics")){
+            latexContent += "|l|l|l|l|l|";
+            next = 5;
+        }
+        
+        for(int attr = next; attr < inst.numAttributes()-1; attr++){
+            latexContent += "c|";
+        }
+        
+        latexContent += "c|}\n" + "\\hline\n";
+        
+        for(int attr = 0; attr < inst.numAttributes()-1; attr++){
+            latexContent += inst.attribute(attr).name() + " & ";
+        }
+        
+        latexContent += inst.attribute(inst.numAttributes()-1).name() + "\\\\ \\hline\n";
+        
+        DecimalFormat df = new DecimalFormat("###.###");
+        
+        for(int indexInst = 0; indexInst < inst.numInstances()-1; indexInst++){
+            for(int attr = 0; attr < inst.numAttributes()-1; attr++){
+                if(inst.attribute(attr).isNumeric()){
+                    double b = inst.get(indexInst).value(attr);
+                    
+                    if(Double.isNaN(b)){
+                        latexContent += " & ";
+                    } else{
+                        latexContent += String.valueOf(df.format(b)) + " & ";
+                    }
+                } else {
+                    latexContent += inst.get(indexInst).attribute(attr).value((int)inst.get(indexInst).value(attr)) + " & ";
+                }
+            }
+            
+            //For the value of the last attribute
+            if(inst.attribute(inst.numAttributes()-1).isNumeric()){
+                double b = inst.get(indexInst).value(inst.numAttributes()-1);
+                
+                if(Double.isNaN(b)){
+                    latexContent += "\\\\\n";
+                } else {
+                    latexContent += String.valueOf(df.format(b)) + "\\\\\n";
+                }
+            } else{
+                latexContent += inst.get(indexInst).attribute(inst.numAttributes()-1).value((int)inst.get(indexInst).value(inst.numAttributes()-1)) + "\\\\\n";
+            }
+        }
+        
+        //For the value of the last instance
+        int lastInst = inst.numInstances() - 1;
+        
+        for(int attr = 0; attr < inst.numAttributes()-1; attr++){
+            if(inst.attribute(attr).isNumeric()){
+                double b = inst.get(lastInst).value(attr);
+                
+                if(Double.isNaN(b)){
+                    latexContent += " & ";
+                } else {
+                    latexContent += String.valueOf(df.format(b)) + " & ";
+                }
+            } else {
+                latexContent += inst.get(lastInst).attribute(attr).value((int)inst.get(lastInst).value(attr)) + " & ";
+            }
+        }
+        
+        if(inst.attribute(inst.numAttributes()-1).isNumeric()){
+            double b = inst.get(lastInst).value(inst.numAttributes()-1);
+            
+            if(Double.isNaN(b)){
+                latexContent += "\\\\ \\hline\n";
+            } else {
+                latexContent += String.valueOf(df.format(b)) + "\\\\ \\hline\n";
+            }
+        }else{
+            latexContent += inst.get(lastInst).attribute(inst.numAttributes()-1).value((int)inst.get(lastInst).value(inst.numAttributes()-1)) + "\\\\ \\hline\n";
+        }
+        
+        latexContent += "\\end{tabular}\n" +
+                        "\\label{tab:table}\n" +
+                        "\\end{center}\n" +
+                        "\\end{table}";
+        
+        return latexContent;
     }
     
     private void savePNGGraph(){
@@ -3206,9 +5426,9 @@ attrSelExpTabs.addTab("Results", results);
                     for (int i = 0; i < resultsAttrSelExp.size(); i++){
                         Future<ResultsAttrSelExp> objectResult = resultsAttrSelExp.get(i);
                         String dt = (String)metricsTableModel.getValueAt(i, 0);
-                        String eval = (String)metricsTableModel.getValueAt(i, 1);
-                        String search = (String)metricsTableModel.getValueAt(i, 2);
-                        String cls = (String)metricsTableModel.getValueAt(i, 3);
+                        String eval = captionEV.get((String)metricsTableModel.getValueAt(i, 1));
+                        String search = captionSE.get((String)metricsTableModel.getValueAt(i, 2));
+                        String cls = captionCL.get((String)metricsTableModel.getValueAt(i, 3));
                         int numAttr = (int)metricsTableModel.getValueAt(i, 4);
 
                         try{
@@ -3323,7 +5543,7 @@ attrSelExpTabs.addTab("Results", results);
                             if(!data.isEmpty()){
                                 for(int z = 0; z < data.size(); z++){
                                     try{
-                                        st.executeUpdate("INSERT INTO predictions (idexperiment, actual_value, predicted_value, dataset, evaluator, search, classifier, attributes, index_attr_selected) "
+                                        st.executeUpdate("INSERT INTO predictions (idexperiment, actual, predicted, dataset, evaluator, search, classifier, attributes, index_attr_selected) "
                                         + "VALUES ('"+idExp+"','"+valuesPredict.get(z).actual()+"','"+valuesPredict.get(z).predicted()+"','"+dt+"','"+eval+"','"+search+"','"+cls+"','"+data.get(z)+"','"+dataIndexAttrSel.get(z)+"')");
                                     } catch(Exception ex){
                                         ScriptRunner runner = new ScriptRunner(conn, false, false);
@@ -3331,7 +5551,7 @@ attrSelExpTabs.addTab("Results", results);
                                         try {
                                             runner.runScript(new BufferedReader(new FileReader(file)));
 
-                                            st.executeUpdate("INSERT INTO predictions (idexperiment, actual_value, predicted_value, dataset, evaluator, search, classifier, attributes, index_attr_selected) "
+                                            st.executeUpdate("INSERT INTO predictions (idexperiment, actual, predicted, dataset, evaluator, search, classifier, attributes, index_attr_selected) "
                                             + "VALUES ('"+idExp+"','"+valuesPredict.get(z).actual()+"','"+valuesPredict.get(z).predicted()+"','"+dt+"','"+eval+"','"+search+"','"+cls+"','"+data.get(z)+"','"+dataIndexAttrSel.get(z)+"')");
                                         } catch (IOException IOex) {
                                             Logger.getLogger(AttrSelExp.class.getName()).log(Level.SEVERE, null, IOex);
@@ -3343,7 +5563,7 @@ attrSelExpTabs.addTab("Results", results);
                             }else{
                                 for(int z = 0; z < valuesPredict.size(); z++){
                                     try{
-                                        st.executeUpdate("INSERT INTO predictions (idexperiment, actual_value, predicted_value, dataset, evaluator, search, classifier) "
+                                        st.executeUpdate("INSERT INTO predictions (idexperiment, actual, predicted, dataset, evaluator, search, classifier) "
                                         + "VALUES ('"+idExp+"','"+valuesPredict.get(z).actual()+"','"+valuesPredict.get(z).predicted()+"','"+dt+"','"+eval+"','"+search+"','"+cls+"')");
                                     } catch(Exception ex){
                                         ScriptRunner runner = new ScriptRunner(conn, false, false);
@@ -3351,7 +5571,7 @@ attrSelExpTabs.addTab("Results", results);
                                         try {
                                             runner.runScript(new BufferedReader(new FileReader(file)));
 
-                                            st.executeUpdate("INSERT INTO predictions (idexperiment, actual_value, predicted_value, dataset, evaluator, search, classifier) "
+                                            st.executeUpdate("INSERT INTO predictions (idexperiment, actual, predicted, dataset, evaluator, search, classifier) "
                                             + "VALUES ('"+idExp+"','"+valuesPredict.get(z).actual()+"','"+valuesPredict.get(z).predicted()+"','"+dt+"','"+eval+"','"+search+"','"+cls+"')");
                                         } catch (IOException IOex) {
                                             Logger.getLogger(AttrSelExp.class.getName()).log(Level.SEVERE, null, IOex);
@@ -3439,7 +5659,7 @@ attrSelExpTabs.addTab("Results", results);
                     
                     //load table predictions
                     for(int id = 0; id < ids.size(); id++){
-                        ResultSet rs3 = st.executeQuery("SELECT actual_value, predicted_value, dataset, evaluator, search,"
+                        ResultSet rs3 = st.executeQuery("SELECT actual, predicted, dataset, evaluator, search,"
                                 + "classifier, attributes, index_attr_selected FROM predictions WHERE idexperiment = " + ids.get(id));                        
                         
                         while(rs3.next()){
@@ -3456,8 +5676,8 @@ attrSelExpTabs.addTab("Results", results);
                             Object[] fila = new Object[newTableModel.getColumnCount()];
                             int j;
                             
-                            fila[0] = rs3.getDouble("actual_value");
-                            fila[1] = rs3.getDouble("predicted_value");
+                            fila[0] = rs3.getDouble("actual");
+                            fila[1] = rs3.getDouble("predicted");
                             
                             for(j = 3; j <= 6; j++) {
                                 fila[j-1] = rs3.getString(j);
@@ -3538,6 +5758,10 @@ attrSelExpTabs.addTab("Results", results);
         searchListModel.removeAllElements();
         classifierListModel.removeAllElements();
         attributesTextField.setText("");
+        captionTableModel.setRowCount(0);
+        captionEV.clear();
+        captionSE.clear();
+        captionCL.clear();
         
         //Jpanel metrics
         metricsTableModel.setRowCount(0);
@@ -3742,11 +5966,6 @@ attrSelExpTabs.addTab("Results", results);
         m_Log.logMessage("Start of experimentation");
         
         int numThreads = 4;
-        int numObjects = listInstances.size()*listClassifier.size();
-        
-        if(!listEvaluators.isEmpty()){
-            numObjects += listInstances.size()*listClassifier.size()*listEvaluators.size();
-        }
         
         if(!numThreadsTextField.getText().trim().equals("")){
             try{
@@ -3758,6 +5977,8 @@ attrSelExpTabs.addTab("Results", results);
         
         executor = Executors.newFixedThreadPool(numThreads);
         Collection<SearchEvaluatorAndClassifier> concurrentExp = new LinkedList<>();
+        Random random;
+        Instances train, test = null;
         
         if(!listEvaluators.isEmpty() && !listSearchAlgorithms.isEmpty()){
             for(int i = 0; i < listInstances.size(); i++){
@@ -3775,7 +5996,9 @@ attrSelExpTabs.addTab("Results", results);
 
                         ASEvaluation evaluator = (ASEvaluation) listEvaluators.get(j);
                         ASSearch search = (ASSearch) listSearchAlgorithms.get(j);
-
+                        //Classifier
+                        Classifier cls = (Classifier) listClassifier.get(z);
+                        
                         try {
                             if (holdOutSplitBtn.isSelected()) {
                                 testMode = 0;
@@ -3784,22 +6007,60 @@ attrSelExpTabs.addTab("Results", results);
                                 if ((percent <= 0) || (percent >= 100)) {
                                     throw new Exception("Percentage must be between 0 and 100");
                                 }
+                                
+                                if(!preserveOrderCheckbox.isSelected()){
+                                    random = new Random(seed);
+                                    inst.randomize(random);
+                                }
+
+                                int trainSize = (int) Math.round(inst.numInstances() * percent / 100);
+                                int testSize = inst.numInstances() - trainSize;
+
+                                //build train and test
+                                train = new Instances(inst, 0, trainSize);
+                                test = new Instances(inst, trainSize, testSize);
+                                
+                                concurrentExp.add(new SearchEvaluatorAndClassifier(m_Log, inst, testMode, seed, classIndex, 
+                                    evaluator, search, cls, progressExp, 0, train, test, 0));
                             }else if (crossValidationBtn.isSelected()) {
                                 testMode = 1;
                                 numFolds = Integer.parseInt(crossValidationTextField.getText());
                                 if (numFolds <= 1) {
                                     throw new Exception("Number of folds must be greater than 1");
                                 }
+                                
+                                random = new Random(seed);
+                                inst.randomize(random);
+
+                                //cross-validate classifier                   
+                                CrossValidation cv = new CrossValidation(inst, numFolds);
+                                int fold = 1;
+
+                                while(cv.hasNext()){
+                                    Instances[] trainTest = cv.next();
+
+                                    test = trainTest[1];
+                                    train = trainTest[0];
+
+                                    
+                                    concurrentExp.add(new SearchEvaluatorAndClassifier(m_Log, inst, testMode, seed, classIndex, 
+                                        evaluator, search, cls, progressExp, 0, train, test, fold));
+                                    fold++;
+                                } 
                             }else if (leaveOneOutBtn.isSelected()) {
                                 testMode = 2;
-                                numFolds = inst.numInstances();
+                                
+                                random = new Random(seed);
+                                inst.randomize(random);
+ 
+                                concurrentExp.add(new SearchEvaluatorAndClassifier(m_Log, inst, testMode, seed, classIndex, 
+                                    evaluator, search, cls, progressExp, 0, null, null, 1));
                             }
+                           
+                            train = null;
+                            test = null;
 
-                            //Classifier
-                            Classifier cls = (Classifier) listClassifier.get(z);
-
-                            concurrentExp.add(new SearchEvaluatorAndClassifier(m_Log, inst, testMode, numFolds, seed, classIndex, 
-                                    percent, evaluator, search, cls, progressExp, Math.round(100/numObjects), preserveOrderCheckbox.isSelected()));
+                            System.gc();
                         } catch (Exception ex) {
                             m_Log.logMessage(ex.getMessage());
                             m_Log.statusMessage("See error log");
@@ -3813,7 +6074,9 @@ attrSelExpTabs.addTab("Results", results);
         for(int i = 0; i < listInstances.size(); i++){
             for(int j = 0; j < listClassifier.size(); j++){
                 Instances inst = new Instances(listInstances.get(i));
-
+                //Classifier
+                Classifier cls = (Classifier) listClassifier.get(j);
+                
                 //testMode = 0 holdOutSplit, 1 = crossValidation, 2 = leaveOneOut
                 int testMode = 0;
                 int numFolds = 10;
@@ -3829,27 +6092,64 @@ attrSelExpTabs.addTab("Results", results);
                         if ((percent <= 0) || (percent >= 100)) {
                             throw new Exception("Percentage must be between 0 and 100");
                         }
+                        
+                        if(!preserveOrderCheckbox.isSelected()){
+                            random = new Random(seed);
+                            inst.randomize(random);
+                        }
+
+                        int trainSize = (int) Math.round(inst.numInstances() * percent / 100);
+                        int testSize = inst.numInstances() - trainSize;
+
+                        //build train and test
+                        train = new Instances(inst, 0, trainSize);
+                        test = new Instances(inst, trainSize, testSize);
+
+                        concurrentExp.add(new SearchEvaluatorAndClassifier(m_Log, inst, testMode, seed, classIndex, 
+                            null, null, cls, progressExp, 0, train, test, 0));
                     }else if (crossValidationBtn.isSelected()) {
                         testMode = 1;
                         numFolds = Integer.parseInt(crossValidationTextField.getText());
                         if (numFolds <= 1) {
                             throw new Exception("Number of folds must be greater than 1");
                         }
+                        
+                        random = new Random(seed);
+                        inst.randomize(random);
+
+                        //cross-validate classifier                   
+                        CrossValidation cv = new CrossValidation(inst, numFolds);
+                        int fold = 1;
+
+                        while(cv.hasNext()){
+                            Instances[] trainTest = cv.next();
+
+                            test = trainTest[1];
+                            train = trainTest[0];
+
+
+                            concurrentExp.add(new SearchEvaluatorAndClassifier(m_Log, inst, testMode, seed, classIndex, 
+                                null, null, cls, progressExp, 0, train, test, fold));
+                            fold++;
+                        } 
                     }else if (leaveOneOutBtn.isSelected()) {
                         testMode = 2;
-                        numFolds = inst.numInstances();
-                    }
-                    
-                    //Classifier
-                    Classifier cls = (Classifier) listClassifier.get(j);
+                                
+                        random = new Random(seed);
+                        inst.randomize(random);
 
-                    concurrentExp.add(new SearchEvaluatorAndClassifier(m_Log, inst, testMode, numFolds, seed, classIndex, 
-                            percent, null, null, cls, progressExp, Math.round(100/numObjects), preserveOrderCheckbox.isSelected()));
+                        concurrentExp.add(new SearchEvaluatorAndClassifier(m_Log, inst, testMode, seed, classIndex, 
+                            null, null, cls, progressExp, 0, null, null, 1));
+                    }
                 } catch (Exception ex) {
                     m_Log.logMessage(ex.getMessage());
                     m_Log.statusMessage("See error log");
                 }
             }
+        }
+        
+        for (SearchEvaluatorAndClassifier t : concurrentExp) {
+            t.setPercentThreads(Math.round(100/concurrentExp.size()));
         }
         
         resultsAttrSelExp = new LinkedList<Future<ResultsAttrSelExp>>();
@@ -3865,12 +6165,16 @@ attrSelExpTabs.addTab("Results", results);
         //so that it reaches 100% regardless of what is assigned to each thread
         /*For example, with 12 objects, each thread would have an assigned 8%, 
         at the end it would be 96 not 100, because of the decimals*/
-        if((resultsAttrSelExp.size() == numObjects) && (progressExp.getValue() < 100)){
+        if((resultsAttrSelExp.size() == concurrentExp.size()) && (progressExp.getValue() < 100)){
             progressExp.setValue(100);
-        }else if(resultsAttrSelExp.size() != numObjects){
+        }else if(resultsAttrSelExp.size() != concurrentExp.size()){
             progressExp.setValue(0);
         }
 
+        concurrentExp = null;
+                
+        System.gc();
+        
         checkLoadData("results");
         runExpBtn.setEnabled(true);
         stopExpBtn.setEnabled(false);
@@ -3920,6 +6224,8 @@ attrSelExpTabs.addTab("Results", results);
     private javax.swing.JTextField attributesTextField;
     private javax.swing.JCheckBox aucMetricsCheckBox;
     private javax.swing.JPanel barChartPanel;
+    private javax.swing.JScrollPane captionScrollPane;
+    private javax.swing.JTable captionTable;
     private javax.swing.JLabel classDatasetsLabel;
     private javax.swing.JLabel classificationMetricsLabel;
     private javax.swing.JPanel classifier;
@@ -3929,30 +6235,35 @@ attrSelExpTabs.addTab("Results", results);
     private javax.swing.JScrollPane classifierScrollPane;
     private javax.swing.JPanel classifierSelectionPanel;
     private javax.swing.JTable classifierTable;
-    private javax.swing.JLabel classifiersPredictionsLabel;
+    private javax.swing.JLabel classifiersLabel;
     private javax.swing.JRadioButton crossValidationBtn;
     private javax.swing.JLabel crossValidationLabel;
     private javax.swing.JTextField crossValidationTextField;
     private javax.swing.JPanel datasets;
+    private javax.swing.JLabel datasetsLabel;
     private javax.swing.JList<String> datasetsList;
     private javax.swing.JScrollPane datasetsListScrollPane;
-    private javax.swing.JLabel datasetsPredictionsLabel;
     private javax.swing.JScrollPane datasetsScrollPane;
     private javax.swing.JTable datasetsTable;
     private javax.swing.JLabel evaluatorLabel;
     private javax.swing.JList<String> evaluatorList;
     private javax.swing.JScrollPane evaluatorListScrollPane;
     private javax.swing.JPanel evaluatorPanel;
-    private javax.swing.JLabel evaluatorsPredictionsLabel;
+    private javax.swing.JLabel evaluatorsLabel;
     private javax.swing.JPanel experiment;
+    private javax.swing.JPanel experimentPanel;
     private javax.swing.JCheckBox fMeasureMetricsCheckBox;
     private javax.swing.JScrollPane featureScrollPane;
     private javax.swing.JPanel featureSelection;
     private javax.swing.JTable featuresTable;
+    private javax.swing.JComboBox<String> filterStatisComboBox;
+    private javax.swing.JLabel filterStatisLabel;
     private javax.swing.JPanel graph;
+    private javax.swing.JLabel groupsLOOLabel;
     private javax.swing.JRadioButton holdOutSplitBtn;
     private javax.swing.JLabel holdOutSplitLabel;
     private javax.swing.JTextField holdOutSplitTextField;
+    private javax.swing.JPanel jPanel2;
     private javax.swing.JCheckBox kappaMetricsCheckBox;
     private javax.swing.JRadioButton leaveOneOutBtn;
     private javax.swing.JButton loadBBDDBtn;
@@ -3961,15 +6272,26 @@ attrSelExpTabs.addTab("Results", results);
     private javax.swing.JButton loadBtnFeature;
     private javax.swing.JButton loadDatasetMetricsBtn;
     private javax.swing.JButton loadDatasetPredictionsBtn;
+    private javax.swing.JButton loadExpBtn;
     private javax.swing.JCheckBox maeMetricsCheckBox;
     private javax.swing.JCheckBox mapeMetricsCheckBox;
     private javax.swing.JCheckBox mccMetricsCheckBox;
+    private javax.swing.JLabel messageNormTestLabel;
     private javax.swing.JComboBox<String> metricGraphComboBox;
     private javax.swing.JLabel metricGraphLabel;
+    private javax.swing.JComboBox<String> metricStatisComboBox;
+    private javax.swing.JLabel metricStatisLabel;
     private javax.swing.JPanel metrics;
     private javax.swing.JScrollPane metricsScrollPane;
     private javax.swing.JTable metricsTable;
     private javax.swing.JCheckBox mseMetricsCheckBox;
+    private javax.swing.JLabel nameExpLabel;
+    private javax.swing.JTextField nameExpTextField;
+    private javax.swing.JPanel nomenclaturePanel;
+    private javax.swing.JLabel numDatasetsStatisLabel;
+    private javax.swing.JLabel numDatasetsStatisValue;
+    private javax.swing.JLabel numSamStatisLabel;
+    private javax.swing.JLabel numSamStatisValue;
     private javax.swing.JLabel numThreadsLabel;
     private javax.swing.JTextField numThreadsTextField;
     private javax.swing.JLabel positiveClassDatasetsLabel;
@@ -3979,6 +6301,7 @@ attrSelExpTabs.addTab("Results", results);
     private javax.swing.JTable predictionsTable;
     private javax.swing.JCheckBox preserveOrderCheckbox;
     private javax.swing.JProgressBar progressExp;
+    private javax.swing.JButton putPreprocessStatisBtn;
     private javax.swing.JCheckBox r2MetricsCheckBox;
     private javax.swing.JCheckBox recallMetricsCheckBox;
     private javax.swing.JLabel regressionMetricsLabel;
@@ -3994,20 +6317,27 @@ attrSelExpTabs.addTab("Results", results);
     private javax.swing.JButton saveBBDDBtn;
     private javax.swing.JButton saveCSVMetricsBtn;
     private javax.swing.JButton saveCSVPredictionsBtn;
+    private javax.swing.JButton saveCSVStatisBtn;
+    private javax.swing.JButton saveExpBtn;
+    private javax.swing.JButton saveLatexMetricsBtn;
     private javax.swing.JButton savePDFGraphBtn;
     private javax.swing.JButton savePNGGraphBtn;
     private javax.swing.JLabel searchLabel;
     private javax.swing.JList<String> searchList;
     private javax.swing.JScrollPane searchListScrollPane;
     private javax.swing.JPanel searchPanel;
-    private javax.swing.JLabel searchsPredictionsLabel;
+    private javax.swing.JLabel searchsLabel;
     private javax.swing.JComboBox<String> selectionClassCombo;
     private javax.swing.JComboBox<String> selectionPositiveClassCombo;
+    private javax.swing.JScrollPane statisticalTestScrollPane;
+    private javax.swing.JTable statisticalTestTable;
+    private javax.swing.JPanel statisticalTestsPanel;
     private javax.swing.JButton stopExpBtn;
     private javax.swing.JButton updateGraphBtn;
     private javax.swing.JButton updatePredictionsBtn;
     private javax.swing.JPanel validation;
     private javax.swing.ButtonGroup validationRadioBtn;
+    private javax.swing.JTextField valueGroupsLOOTextField;
     private javax.swing.JComboBox<String> xAxis1ComboBox;
     private javax.swing.JLabel xAxis1Label;
     private javax.swing.JComboBox<String> xAxis2ComboBox;

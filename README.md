@@ -27,11 +27,11 @@ https://github.com/gualbe/weka-feature-selection-studio/raw/main/FS-Studio%20Man
 
 The Experiment panel:
 
-![Experiment panel](screenshots/fsstudio1.jpg)
+![Experiment panel](screenshots/fsstudio1v11.png)
 
 The Results panel:
 
-![Results panel](screenshots/fsstudio2.jpg)
+![Results panel](screenshots/fsstudio2v11.png)
 
 ## Contact
 

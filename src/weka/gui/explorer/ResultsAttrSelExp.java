@@ -25,8 +25,9 @@ public class ResultsAttrSelExp {
     private final ASSearch search;
     private final Classifier classifier;
     private final int numAttr;
+    private final int fold;
 
-    public ResultsAttrSelExp(Evaluation evalClassifier, Instances test, Instances inst, ASEvaluation evaluator, ASSearch search, Classifier classifier, int numAttr) {
+    public ResultsAttrSelExp(Evaluation evalClassifier, Instances test, Instances inst, ASEvaluation evaluator, ASSearch search, Classifier classifier, int numAttr, int fold) {
         this.evalClassifier = evalClassifier;
         this.test = test;
         this.inst = inst;
@@ -34,6 +35,7 @@ public class ResultsAttrSelExp {
         this.search = search;
         this.classifier = classifier;
         this.numAttr = numAttr;
+        this.fold = fold;
     }
 
     public Evaluation getEvalClassifier() {
@@ -62,5 +64,9 @@ public class ResultsAttrSelExp {
     
     public int getNumAttr(){
         return numAttr;
+    }
+
+    public int getFold() {
+        return fold;
     }
 }
