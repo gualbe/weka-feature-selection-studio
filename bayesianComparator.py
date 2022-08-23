@@ -15,10 +15,10 @@ def main(listM1, listM2):
 if __name__ == '__main__':
     path = sys.argv[1]
 
-    f = open(path + "\\metricsJava.txt", "r")
+    f = open(path + "metricsJava.txt", "r")
     lineas = f.readlines()
     f.close()
-    f = open(path + '\\metricsPython.txt', 'w')
+    f = open(path + 'metricsPython.txt', 'w')
 
     for i in  range(0,len(lineas)):
         exp1 = lineas[i]

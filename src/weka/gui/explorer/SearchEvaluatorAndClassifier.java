@@ -34,14 +34,15 @@ public class SearchEvaluatorAndClassifier implements Callable<ResultsAttrSelExp>
     private ASSearch search;
     private Classifier classifier;
     private final JProgressBar progressBar;
-    private int percentThreads;
+    private static int percentThreads = 0;
     private Instances train;
     private Instances test;
     private final int fold;
+    private int numTareas;
 
     public SearchEvaluatorAndClassifier(Logger m_Log, Instances inst, int testMode, int seed, int classIndex, 
             ASEvaluation evaluator, ASSearch search, Classifier classifier, 
-            JProgressBar progressBar, int pThreads, Instances train, Instances test, int fold) throws Exception {
+            JProgressBar progressBar, int numTareas, Instances train, Instances test, int fold) throws Exception {
         this.log = m_Log;
         this.inst = new Instances(inst);
         this.testMode = testMode;
@@ -71,8 +72,8 @@ public class SearchEvaluatorAndClassifier implements Callable<ResultsAttrSelExp>
         
         this.classifier = AbstractClassifier.makeCopy(classifier);
         this.progressBar = progressBar;
-        this.percentThreads = pThreads;
         this.fold = fold;
+        this.numTareas = numTareas;
     }
     
     public ResultsAttrSelExp run() {
@@ -189,7 +190,9 @@ public class SearchEvaluatorAndClassifier implements Callable<ResultsAttrSelExp>
         } 
         
         synchronized(progressBar) {
-            progressBar.setValue(progressBar.getValue()+percentThreads);
+            //progressBar.setValue(progressBar.getValue()+percentThreads);
+            percentThreads++;
+            progressBar.setValue((100*percentThreads)/numTareas);
         }
         
         this.inst = null;
@@ -206,7 +209,7 @@ public class SearchEvaluatorAndClassifier implements Callable<ResultsAttrSelExp>
         return res;
     }
 
-    public void setPercentThreads(int percentThreads) {
-        this.percentThreads = percentThreads;
+    public void setNumTareas(int numTareas) {
+        this.numTareas = numTareas;
     }
 }

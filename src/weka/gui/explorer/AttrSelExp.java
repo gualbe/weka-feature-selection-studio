@@ -3069,9 +3069,9 @@ attrSelExpTabs.addTab("Results", results);
             /*Path path = Paths.get("");
             String directoryName = path.toAbsolutePath().normalize().toString();*/
             String tmpdir = System.getProperty("java.io.tmpdir");
-            File oldConf = new File(tmpdir + "\\metricsJava.txt");
+            File oldConf = new File(tmpdir + "metricsJava.txt");
             oldConf.delete();
-            File conf = new File(tmpdir + "\\metricsJava.txt");
+            File conf = new File(tmpdir + "metricsJava.txt");
             conf.setExecutable(true);
             conf.setReadable(true);
             conf.setWritable(true);
@@ -3092,14 +3092,21 @@ attrSelExpTabs.addTab("Results", results);
             }
             
             String dir = System.getProperty("user.home");
-            String[] bayComp = new String[]{"python", dir + "\\wekafiles\\\\packages\\FS-Studio\\bayesianComparator.py", tmpdir};
-            //String[] bayComp = new String[]{"python", "bayesianComparator.py", tmpdir};
+            String fileSeparator = File.separator;
+            String[] bayComp;
+            
+            if(fileSeparator.equals("\\")){
+                bayComp = new String[]{"python", dir + "\\wekafiles\\packages\\FS-Studio\\bayesianComparator.py", tmpdir};
+                //bayComp = new String[]{"python", "bayesianComparator.py", tmpdir};
+            }else{
+                bayComp = new String[]{"python", dir + "/wekafiles/packages/FS-Studio/bayesianComparator.py", tmpdir};
+            }
               
             Process proc = Runtime.getRuntime().exec(bayComp);
             
             proc.waitFor();
             
-            File file = new File(tmpdir + "\\metricsPython.txt");
+            File file = new File(tmpdir + "metricsPython.txt");
             List<String> resultsBuff = new ArrayList();
             BufferedReader br = new BufferedReader(new FileReader(file));
             String line;
@@ -3201,7 +3208,12 @@ attrSelExpTabs.addTab("Results", results);
 
                             if(evalResult != null){
                                 int index = foundInstances(objectResult.get().getInst());
-                                s += Double.toString(evalResult.fMeasure(listClassPositive.get(index))) + ";";
+                                
+                                if(Double.isNaN(evalResult.fMeasure(listClassPositive.get(index)))){
+                                    s += 0.0 + ";";
+                                }else{
+                                    s += Double.toString(evalResult.fMeasure(listClassPositive.get(index))) + ";";
+                                }
                             }
                         }
                     }
@@ -3227,7 +3239,12 @@ attrSelExpTabs.addTab("Results", results);
 
                         if(evalResult != null){
                             int index = foundInstances(objectResult.get().getInst());
-                            s += Double.toString(evalResult.fMeasure(listClassPositive.get(index))) + ";";
+                            
+                            if(Double.isNaN(evalResult.fMeasure(listClassPositive.get(index)))){
+                                s += 0.0 + ";";
+                            }else{
+                                s += Double.toString(evalResult.fMeasure(listClassPositive.get(index))) + ";";
+                            }
                         }
                     }
                 }
@@ -3236,7 +3253,6 @@ attrSelExpTabs.addTab("Results", results);
             m.add(s);
             s = "";
         }
-        
         
         return m;
     }
@@ -3271,6 +3287,30 @@ attrSelExpTabs.addTab("Results", results);
             }
         }
         
+        String ev = "original";
+        String se = "original";
+            
+        for(int j = 0; j < listClassifier.size(); j++){
+            String c = getSpec(listClassifier.get(j));
+
+            for(int z = 0; z < resultsAttrSelExp.size(); z++){
+                Future<ResultsAttrSelExp> objectResult = resultsAttrSelExp.get(z);
+
+                if(objectResult.get().getEvaluator() == null && objectResult.get().getSearch() == null){
+                    if(c.equals(getSpec(objectResult.get().getClassifier()))){
+                        Evaluation evalResult = objectResult.get().getEvalClassifier();
+
+                        if(evalResult != null){
+                            s += Double.toString(evalResult.pctCorrect()) + ";";
+                        }
+                    }
+                }
+            }
+
+            m.add(s);
+            s = "";
+        }
+        
         return m;
     }
     
@@ -3294,7 +3334,12 @@ attrSelExpTabs.addTab("Results", results);
 
                             if(evalResult != null){
                                 int index = foundInstances(objectResult.get().getInst());
-                                s += Double.toString(evalResult.precision(listClassPositive.get(index))) + ";";
+                                
+                                if(Double.isNaN(evalResult.precision(listClassPositive.get(index)))){
+                                    s += 0.0 + ";";
+                                }else{
+                                    s += Double.toString(evalResult.precision(listClassPositive.get(index))) + ";";
+                                }
                             }
                         }
                     }
@@ -3303,6 +3348,36 @@ attrSelExpTabs.addTab("Results", results);
                 m.add(s);
                 s = "";
             }
+        }
+        
+        String ev = "original";
+        String se = "original";
+            
+        for(int j = 0; j < listClassifier.size(); j++){
+            String c = getSpec(listClassifier.get(j));
+
+            for(int z = 0; z < resultsAttrSelExp.size(); z++){
+                Future<ResultsAttrSelExp> objectResult = resultsAttrSelExp.get(z);
+
+                if(objectResult.get().getEvaluator() == null && objectResult.get().getSearch() == null){
+                    if(c.equals(getSpec(objectResult.get().getClassifier()))){
+                        Evaluation evalResult = objectResult.get().getEvalClassifier();
+
+                        if(evalResult != null){
+                            int index = foundInstances(objectResult.get().getInst());
+                                
+                            if(Double.isNaN(evalResult.precision(listClassPositive.get(index)))){
+                                s += 0.0 + ";";
+                            }else{
+                                s += Double.toString(evalResult.precision(listClassPositive.get(index))) + ";";
+                            }
+                        }
+                    }
+                }
+            }
+
+            m.add(s);
+            s = "";
         }
         
         return m;
@@ -3328,7 +3403,12 @@ attrSelExpTabs.addTab("Results", results);
 
                             if(evalResult != null){
                                 int index = foundInstances(objectResult.get().getInst());
-                                s += Double.toString(evalResult.recall(listClassPositive.get(index))) + ";";
+                                
+                                if(Double.isNaN(evalResult.recall(listClassPositive.get(index)))){
+                                    s += 0.0 + ";";
+                                }else{
+                                    s += Double.toString(evalResult.recall(listClassPositive.get(index))) + ";";
+                                }
                             }
                         }
                     }
@@ -3337,6 +3417,36 @@ attrSelExpTabs.addTab("Results", results);
                 m.add(s);
                 s = "";
             }
+        }
+        
+        String ev = "original";
+        String se = "original";
+            
+        for(int j = 0; j < listClassifier.size(); j++){
+            String c = getSpec(listClassifier.get(j));
+
+            for(int z = 0; z < resultsAttrSelExp.size(); z++){
+                Future<ResultsAttrSelExp> objectResult = resultsAttrSelExp.get(z);
+
+                if(objectResult.get().getEvaluator() == null && objectResult.get().getSearch() == null){
+                    if(c.equals(getSpec(objectResult.get().getClassifier()))){
+                        Evaluation evalResult = objectResult.get().getEvalClassifier();
+
+                        if(evalResult != null){
+                            int index = foundInstances(objectResult.get().getInst());
+                                
+                            if(Double.isNaN(evalResult.recall(listClassPositive.get(index)))){
+                                s += 0.0 + ";";
+                            }else{
+                                s += Double.toString(evalResult.recall(listClassPositive.get(index))) + ";";
+                            }
+                        }
+                    }
+                }
+            }
+
+            m.add(s);
+            s = "";
         }
         
         return m;
@@ -3372,6 +3482,30 @@ attrSelExpTabs.addTab("Results", results);
             }
         }
         
+        String ev = "original";
+        String se = "original";
+            
+        for(int j = 0; j < listClassifier.size(); j++){
+            String c = getSpec(listClassifier.get(j));
+
+            for(int z = 0; z < resultsAttrSelExp.size(); z++){
+                Future<ResultsAttrSelExp> objectResult = resultsAttrSelExp.get(z);
+
+                if(objectResult.get().getEvaluator() == null && objectResult.get().getSearch() == null){
+                    if(c.equals(getSpec(objectResult.get().getClassifier()))){
+                        Evaluation evalResult = objectResult.get().getEvalClassifier();
+
+                        if(evalResult != null){
+                            s += Double.toString(evalResult.kappa()) + ";";
+                        }
+                    }
+                }
+            }
+
+            m.add(s);
+            s = "";
+        }
+        
         return m;
     }
     
@@ -3395,7 +3529,12 @@ attrSelExpTabs.addTab("Results", results);
 
                             if(evalResult != null){
                                 int index = foundInstances(objectResult.get().getInst());
-                                s += Double.toString(evalResult.matthewsCorrelationCoefficient(listClassPositive.get(index))) + ";";
+                                
+                                if(Double.isNaN(evalResult.matthewsCorrelationCoefficient(listClassPositive.get(index)))){
+                                    s += 0.0 + ";";
+                                }else{
+                                    s += Double.toString(evalResult.matthewsCorrelationCoefficient(listClassPositive.get(index))) + ";";
+                                }
                             }
                         }
                     }
@@ -3404,6 +3543,36 @@ attrSelExpTabs.addTab("Results", results);
                 m.add(s);
                 s = "";
             }
+        }
+        
+        String ev = "original";
+        String se = "original";
+            
+        for(int j = 0; j < listClassifier.size(); j++){
+            String c = getSpec(listClassifier.get(j));
+
+            for(int z = 0; z < resultsAttrSelExp.size(); z++){
+                Future<ResultsAttrSelExp> objectResult = resultsAttrSelExp.get(z);
+
+                if(objectResult.get().getEvaluator() == null && objectResult.get().getSearch() == null){
+                    if(c.equals(getSpec(objectResult.get().getClassifier()))){
+                        Evaluation evalResult = objectResult.get().getEvalClassifier();
+
+                        if(evalResult != null){
+                            int index = foundInstances(objectResult.get().getInst());
+                                
+                            if(Double.isNaN(evalResult.matthewsCorrelationCoefficient(listClassPositive.get(index)))){
+                                s += 0.0 + ";";
+                            }else{
+                                s += Double.toString(evalResult.matthewsCorrelationCoefficient(listClassPositive.get(index))) + ";";
+                            }
+                        }
+                    }
+                }
+            }
+
+            m.add(s);
+            s = "";
         }
         
         return m;
@@ -3429,7 +3598,12 @@ attrSelExpTabs.addTab("Results", results);
 
                             if(evalResult != null){
                                 int index = foundInstances(objectResult.get().getInst());
-                                s += Double.toString(evalResult.areaUnderROC(listClassPositive.get(index))) + ";";
+                                
+                                if(Double.isNaN(evalResult.areaUnderROC(listClassPositive.get(index)))){
+                                    s += 0.0 + ";";
+                                }else{
+                                    s += Double.toString(evalResult.areaUnderROC(listClassPositive.get(index))) + ";";
+                                }
                             }
                         }
                     }
@@ -3438,6 +3612,36 @@ attrSelExpTabs.addTab("Results", results);
                 m.add(s);
                 s = "";
             }
+        }
+        
+        String ev = "original";
+        String se = "original";
+            
+        for(int j = 0; j < listClassifier.size(); j++){
+            String c = getSpec(listClassifier.get(j));
+
+            for(int z = 0; z < resultsAttrSelExp.size(); z++){
+                Future<ResultsAttrSelExp> objectResult = resultsAttrSelExp.get(z);
+
+                if(objectResult.get().getEvaluator() == null && objectResult.get().getSearch() == null){
+                    if(c.equals(getSpec(objectResult.get().getClassifier()))){
+                        Evaluation evalResult = objectResult.get().getEvalClassifier();
+
+                        if(evalResult != null){
+                            int index = foundInstances(objectResult.get().getInst());
+                                
+                            if(Double.isNaN(evalResult.areaUnderROC(listClassPositive.get(index)))){
+                                s += 0.0 + ";";
+                            }else{
+                                s += Double.toString(evalResult.areaUnderROC(listClassPositive.get(index))) + ";";
+                            }
+                        }
+                    }
+                }
+            }
+
+            m.add(s);
+            s = "";
         }
         
         return m;
@@ -3473,6 +3677,30 @@ attrSelExpTabs.addTab("Results", results);
             }
         }
         
+        String ev = "original";
+        String se = "original";
+            
+        for(int j = 0; j < listClassifier.size(); j++){
+            String c = getSpec(listClassifier.get(j));
+
+            for(int z = 0; z < resultsAttrSelExp.size(); z++){
+                Future<ResultsAttrSelExp> objectResult = resultsAttrSelExp.get(z);
+
+                if(objectResult.get().getEvaluator() == null && objectResult.get().getSearch() == null){
+                    if(c.equals(getSpec(objectResult.get().getClassifier()))){
+                        Evaluation evalResult = objectResult.get().getEvalClassifier();
+
+                        if(evalResult != null){
+                            s += Double.toString(evalResult.meanAbsoluteError()) + ";";
+                        }
+                    }
+                }
+            }
+
+            m.add(s);
+            s = "";
+        }
+        
         return m;
     }
     
@@ -3506,6 +3734,30 @@ attrSelExpTabs.addTab("Results", results);
             }
         }
         
+        String ev = "original";
+        String se = "original";
+            
+        for(int j = 0; j < listClassifier.size(); j++){
+            String c = getSpec(listClassifier.get(j));
+
+            for(int z = 0; z < resultsAttrSelExp.size(); z++){
+                Future<ResultsAttrSelExp> objectResult = resultsAttrSelExp.get(z);
+
+                if(objectResult.get().getEvaluator() == null && objectResult.get().getSearch() == null){
+                    if(c.equals(getSpec(objectResult.get().getClassifier()))){
+                        Evaluation evalResult = objectResult.get().getEvalClassifier();
+
+                        if(evalResult != null){
+                            s += Double.toString(Math.pow(evalResult.rootMeanSquaredError(), 2)) + ";";
+                        }
+                    }
+                }
+            }
+
+            m.add(s);
+            s = "";
+        }
+        
         return m;
     }
     
@@ -3537,6 +3789,30 @@ attrSelExpTabs.addTab("Results", results);
                 m.add(s);
                 s = "";
             }
+        }
+        
+        String ev = "original";
+        String se = "original";
+            
+        for(int j = 0; j < listClassifier.size(); j++){
+            String c = getSpec(listClassifier.get(j));
+
+            for(int z = 0; z < resultsAttrSelExp.size(); z++){
+                Future<ResultsAttrSelExp> objectResult = resultsAttrSelExp.get(z);
+
+                if(objectResult.get().getEvaluator() == null && objectResult.get().getSearch() == null){
+                    if(c.equals(getSpec(objectResult.get().getClassifier()))){
+                        Evaluation evalResult = objectResult.get().getEvalClassifier();
+
+                        if(evalResult != null){
+                            s += Double.toString(evalResult.rootMeanSquaredError()) + ";";
+                        }
+                    }
+                }
+            }
+
+            m.add(s);
+            s = "";
         }
         
         return m;
@@ -3583,6 +3859,40 @@ attrSelExpTabs.addTab("Results", results);
             }
         }
         
+        String ev = "original";
+        String se = "original";
+            
+        for(int j = 0; j < listClassifier.size(); j++){
+            String c = getSpec(listClassifier.get(j));
+
+            for(int z = 0; z < resultsAttrSelExp.size(); z++){
+                Future<ResultsAttrSelExp> objectResult = resultsAttrSelExp.get(z);
+
+                if(objectResult.get().getEvaluator() == null && objectResult.get().getSearch() == null){
+                    if(c.equals(getSpec(objectResult.get().getClassifier()))){
+                        Evaluation evalResult = objectResult.get().getEvalClassifier();
+
+                        if(evalResult != null){
+                            double aux = 0.0;
+
+                            List<Prediction> valuesPredict = evalResult.predictions();
+
+                            for(int e = 0; e < valuesPredict.size(); e++){
+                                aux += Math.abs(valuesPredict.get(e).actual() - valuesPredict.get(e).predicted())/valuesPredict.get(e).predicted();
+                                size++;
+                            }
+
+                            s += Double.toString((aux/size)*100) + ";";
+                            size = 0;
+                        }
+                    }
+                }
+            }
+
+            m.add(s);
+            s = "";
+        }
+        
         return m;
     }
     
@@ -3619,6 +3929,35 @@ attrSelExpTabs.addTab("Results", results);
                 m.add(s);
                 s = "";
             }
+        }
+        
+        String ev = "original";
+        String se = "original";
+            
+        for(int j = 0; j < listClassifier.size(); j++){
+            String c = getSpec(listClassifier.get(j));
+
+            for(int z = 0; z < resultsAttrSelExp.size(); z++){
+                Future<ResultsAttrSelExp> objectResult = resultsAttrSelExp.get(z);
+
+                if(objectResult.get().getEvaluator() == null && objectResult.get().getSearch() == null){
+                    if(c.equals(getSpec(objectResult.get().getClassifier()))){
+                        Evaluation evalResult = objectResult.get().getEvalClassifier();
+
+                        if(evalResult != null){
+                            try {
+                                s += Double.toString(evalResult.correlationCoefficient()) + ";";
+                            } catch (Exception ex) {
+                                s += "0.0;";
+                                Logger.getLogger(AttrSelExp.class.getName()).log(Level.SEVERE, null, ex);
+                            }
+                        }
+                    }
+                }
+            }
+
+            m.add(s);
+            s = "";
         }
         
         return m;
@@ -3667,7 +4006,7 @@ attrSelExpTabs.addTab("Results", results);
                                         confM.addPredictions((ArrayList<Prediction>) aux);
                                         
                                         if(Double.isNaN(confM.getTwoClassStats(indexPos).getFMeasure())){
-                                            s += "0;";
+                                            s += "0.0;";
                                         }else{
                                             s += confM.getTwoClassStats(indexPos).getFMeasure() + ";";
                                         }
@@ -3687,7 +4026,7 @@ attrSelExpTabs.addTab("Results", results);
                                     confM.addPredictions((ArrayList<Prediction>) aux);
                                     
                                     if(Double.isNaN(confM.getTwoClassStats(indexPos).getFMeasure())){
-                                        s += "0;";
+                                        s += "0.0;";
                                     }else{
                                         s += confM.getTwoClassStats(indexPos).getFMeasure() + ";";
                                     }
@@ -3702,6 +4041,79 @@ attrSelExpTabs.addTab("Results", results);
                 m.add(s);
                 s = "";
             }
+        }
+        
+        String ev = "original";
+        String se = "original";
+            
+        for(int j = 0; j < listClassifier.size(); j++){
+            String c = getSpec(listClassifier.get(j));
+
+            for(int z = 0; z < resultsAttrSelExp.size(); z++){
+                Future<ResultsAttrSelExp> objectResult = resultsAttrSelExp.get(z);
+
+                if(objectResult.get().getEvaluator() == null && objectResult.get().getSearch() == null){
+                    if(c.equals(getSpec(objectResult.get().getClassifier()))){
+                        Evaluation evalResult = objectResult.get().getEvalClassifier();
+
+                        if(evalResult != null){
+                            int indexPos = foundInstances(objectResult.get().getInst());
+                            List<Prediction> valuesPredict = evalResult.predictions();
+                            List<Prediction> aux = new ArrayList<>();
+                            int last = 0;
+                            int cont = objectResult.get().getInst().numInstances()/groups;
+                            int index = objectResult.get().getInst().classIndex();
+                            String[] classNames = new String[objectResult.get().getInst().attribute(index).numValues()];
+
+                            for(int value = 0; value < objectResult.get().getInst().attribute(index).numValues(); value++){
+                                classNames[value] = objectResult.get().getInst().attribute(index).value(value);
+                            }
+
+                            for(int rest = 0; rest < cont; rest++){
+                                if((last+groups) < valuesPredict.size()){
+                                    for(int g = last; g < (last+groups); g++){
+                                        aux.add(valuesPredict.get(g));
+                                    }
+
+                                    confM = new ConfusionMatrix(classNames);
+
+                                    confM.addPredictions((ArrayList<Prediction>) aux);
+
+                                    if(Double.isNaN(confM.getTwoClassStats(indexPos).getFMeasure())){
+                                        s += "0.0;";
+                                    }else{
+                                        s += confM.getTwoClassStats(indexPos).getFMeasure() + ";";
+                                    }
+
+                                    aux.clear();
+                                    last += groups;
+                                }
+                            }
+
+                            if(last < valuesPredict.size()){
+                                for(int g = last; g < valuesPredict.size(); g++){
+                                    aux.add(valuesPredict.get(g));
+                                }
+
+                                confM = new ConfusionMatrix(classNames);
+
+                                confM.addPredictions((ArrayList<Prediction>) aux);
+
+                                if(Double.isNaN(confM.getTwoClassStats(indexPos).getFMeasure())){
+                                    s += "0.0;";
+                                }else{
+                                    s += confM.getTwoClassStats(indexPos).getFMeasure() + ";";
+                                }
+
+                                aux.clear();
+                            }
+                        }
+                    }
+                }
+            }
+
+            m.add(s);
+            s = "";
         }
         
         return m;
@@ -3750,7 +4162,7 @@ attrSelExpTabs.addTab("Results", results);
                                         confM.addPredictions((ArrayList<Prediction>) aux);
                                         
                                         if(Double.isNaN(confM.getTwoClassStats(indexPos).getPrecision())){
-                                            s += "0;";
+                                            s += "0.0;";
                                         }else{
                                             s += confM.getTwoClassStats(indexPos).getPrecision() + ";";
                                         }
@@ -3770,7 +4182,7 @@ attrSelExpTabs.addTab("Results", results);
                                     confM.addPredictions((ArrayList<Prediction>) aux);
                                     
                                     if(Double.isNaN(confM.getTwoClassStats(indexPos).getPrecision())){
-                                        s += "0;";
+                                        s += "0.0;";
                                     }else{
                                         s += confM.getTwoClassStats(indexPos).getPrecision() + ";";
                                     }
@@ -3785,6 +4197,79 @@ attrSelExpTabs.addTab("Results", results);
                 m.add(s);
                 s = "";
             }
+        }
+        
+        String ev = "original";
+        String se = "original";
+            
+        for(int j = 0; j < listClassifier.size(); j++){
+            String c = getSpec(listClassifier.get(j));
+
+            for(int z = 0; z < resultsAttrSelExp.size(); z++){
+                Future<ResultsAttrSelExp> objectResult = resultsAttrSelExp.get(z);
+
+                if(objectResult.get().getEvaluator() == null && objectResult.get().getSearch() == null){
+                    if(c.equals(getSpec(objectResult.get().getClassifier()))){
+                        Evaluation evalResult = objectResult.get().getEvalClassifier();
+
+                        if(evalResult != null){
+                            int indexPos = foundInstances(objectResult.get().getInst());
+                            List<Prediction> valuesPredict = evalResult.predictions();
+                            List<Prediction> aux = new ArrayList<>();
+                            int last = 0;
+                            int cont = objectResult.get().getInst().numInstances()/groups;
+                            int index = objectResult.get().getInst().classIndex();
+                            String[] classNames = new String[objectResult.get().getInst().attribute(index).numValues()];
+
+                            for(int value = 0; value < objectResult.get().getInst().attribute(index).numValues(); value++){
+                                classNames[value] = objectResult.get().getInst().attribute(index).value(value);
+                            }
+
+                            for(int rest = 0; rest < cont; rest++){
+                                if((last+groups) < valuesPredict.size()){
+                                    for(int g = last; g < (last+groups); g++){
+                                        aux.add(valuesPredict.get(g));
+                                    }
+
+                                    confM = new ConfusionMatrix(classNames);
+
+                                    confM.addPredictions((ArrayList<Prediction>) aux);
+
+                                    if(Double.isNaN(confM.getTwoClassStats(indexPos).getPrecision())){
+                                        s += "0.0;";
+                                    }else{
+                                        s += confM.getTwoClassStats(indexPos).getPrecision() + ";";
+                                    }
+
+                                    aux.clear();
+                                    last += groups;
+                                }
+                            }
+
+                            if(last < valuesPredict.size()){
+                                for(int g = last; g < valuesPredict.size(); g++){
+                                    aux.add(valuesPredict.get(g));
+                                }
+
+                                confM = new ConfusionMatrix(classNames);
+
+                                confM.addPredictions((ArrayList<Prediction>) aux);
+
+                                if(Double.isNaN(confM.getTwoClassStats(indexPos).getPrecision())){
+                                    s += "0.0;";
+                                }else{
+                                    s += confM.getTwoClassStats(indexPos).getPrecision() + ";";
+                                }
+
+                                aux.clear();
+                                }
+                        }
+                    }
+                }
+            }
+
+            m.add(s);
+            s = "";
         }
         
         return m;
@@ -3833,7 +4318,7 @@ attrSelExpTabs.addTab("Results", results);
                                         confM.addPredictions((ArrayList<Prediction>) aux);
                                         
                                         if(Double.isNaN(confM.getTwoClassStats(indexPos).getRecall())){
-                                            s += "0;";
+                                            s += "0.0;";
                                         }else{
                                             s += confM.getTwoClassStats(indexPos).getRecall() + ";";
                                         }
@@ -3853,7 +4338,7 @@ attrSelExpTabs.addTab("Results", results);
                                     confM.addPredictions((ArrayList<Prediction>) aux);
                                     
                                     if(Double.isNaN(confM.getTwoClassStats(indexPos).getRecall())){
-                                        s += "0;";
+                                        s += "0.0;";
                                     }else{
                                         s += confM.getTwoClassStats(indexPos).getRecall() + ";";
                                     }
@@ -3868,6 +4353,79 @@ attrSelExpTabs.addTab("Results", results);
                 m.add(s);
                 s = "";
             }
+        }
+        
+        String ev = "original";
+        String se = "original";
+            
+        for(int j = 0; j < listClassifier.size(); j++){
+            String c = getSpec(listClassifier.get(j));
+
+            for(int z = 0; z < resultsAttrSelExp.size(); z++){
+                Future<ResultsAttrSelExp> objectResult = resultsAttrSelExp.get(z);
+
+                if(objectResult.get().getEvaluator() == null && objectResult.get().getSearch() == null){
+                    if(c.equals(getSpec(objectResult.get().getClassifier()))){
+                        Evaluation evalResult = objectResult.get().getEvalClassifier();
+
+                        if(evalResult != null){
+                            int indexPos = foundInstances(objectResult.get().getInst());
+                            List<Prediction> valuesPredict = evalResult.predictions();
+                            List<Prediction> aux = new ArrayList<>();
+                            int last = 0;
+                            int cont = objectResult.get().getInst().numInstances()/groups;
+                            int index = objectResult.get().getInst().classIndex();
+                            String[] classNames = new String[objectResult.get().getInst().attribute(index).numValues()];
+
+                            for(int value = 0; value < objectResult.get().getInst().attribute(index).numValues(); value++){
+                                classNames[value] = objectResult.get().getInst().attribute(index).value(value);
+                            }
+
+                            for(int rest = 0; rest < cont; rest++){
+                                if((last+groups) < valuesPredict.size()){
+                                    for(int g = last; g < (last+groups); g++){
+                                        aux.add(valuesPredict.get(g));
+                                    }
+
+                                    confM = new ConfusionMatrix(classNames);
+
+                                    confM.addPredictions((ArrayList<Prediction>) aux);
+
+                                    if(Double.isNaN(confM.getTwoClassStats(indexPos).getRecall())){
+                                        s += "0.0;";
+                                    }else{
+                                        s += confM.getTwoClassStats(indexPos).getRecall() + ";";
+                                    }
+
+                                    aux.clear();
+                                    last += groups;
+                                }
+                            }
+
+                            if(last < valuesPredict.size()){
+                                for(int g = last; g < valuesPredict.size(); g++){
+                                    aux.add(valuesPredict.get(g));
+                                }
+
+                                confM = new ConfusionMatrix(classNames);
+
+                                confM.addPredictions((ArrayList<Prediction>) aux);
+
+                                if(Double.isNaN(confM.getTwoClassStats(indexPos).getRecall())){
+                                    s += "0.0;";
+                                }else{
+                                    s += confM.getTwoClassStats(indexPos).getRecall() + ";";
+                                }
+
+                                aux.clear();
+                            }
+                        }
+                    }
+                }
+            }
+
+            m.add(s);
+            s = "";
         }
         
         return m;
@@ -3944,6 +4502,71 @@ attrSelExpTabs.addTab("Results", results);
             }
         }
         
+        String ev = "original";
+        String se = "original";
+            
+        for(int j = 0; j < listClassifier.size(); j++){
+            String c = getSpec(listClassifier.get(j));
+
+            for(int z = 0; z < resultsAttrSelExp.size(); z++){
+                Future<ResultsAttrSelExp> objectResult = resultsAttrSelExp.get(z);
+
+                if(objectResult.get().getEvaluator() == null && objectResult.get().getSearch() == null){
+                    if(c.equals(getSpec(objectResult.get().getClassifier()))){
+                        Evaluation evalResult = objectResult.get().getEvalClassifier();
+
+                        if(evalResult != null){
+                            List<Prediction> valuesPredict = evalResult.predictions();
+                            List<Prediction> aux = new ArrayList<>();
+                            int last = 0;
+                            int cont = objectResult.get().getInst().numInstances()/groups;
+
+                            for(int rest = 0; rest < cont; rest++){
+                                if((last+groups) < valuesPredict.size()){
+                                    for(int g = last; g < (last+groups); g++){
+                                        aux.add(valuesPredict.get(g));
+                                    }
+
+                                    double sumatorio = 0.0;
+
+                                    for(int a = 0; a < aux.size(); a++){
+                                        sumatorio += Math.abs(aux.get(a).actual() - aux.get(a).predicted());
+                                    }
+
+                                    double mae = (1/groups) * sumatorio;
+
+                                    s += mae + ";";
+                                    aux.clear();
+                                    last += groups;
+                                }
+                            }
+
+                            if(last < valuesPredict.size()){
+                                for(int g = last; g < valuesPredict.size(); g++){
+                                    aux.add(valuesPredict.get(g));
+                                }
+
+                                double sumatorio = 0.0;
+
+                                for(int a = 0; a < aux.size(); a++){
+                                    sumatorio += Math.abs(aux.get(a).actual() - aux.get(a).predicted());
+                                }
+
+                                double mae = (1/groups) * sumatorio;
+
+                                s += mae + ";";
+
+                                aux.clear();
+                            }
+                        }
+                    }
+                }
+            }
+
+            m.add(s);
+            s = "";
+        }
+        
         return m;
     }
     
@@ -4016,6 +4639,71 @@ attrSelExpTabs.addTab("Results", results);
                 m.add(s);
                 s = "";
             }
+        }
+        
+        String ev = "original";
+        String se = "original";
+            
+        for(int j = 0; j < listClassifier.size(); j++){
+            String c = getSpec(listClassifier.get(j));
+
+            for(int z = 0; z < resultsAttrSelExp.size(); z++){
+                Future<ResultsAttrSelExp> objectResult = resultsAttrSelExp.get(z);
+
+                if(objectResult.get().getEvaluator() == null && objectResult.get().getSearch() == null){
+                    if(c.equals(getSpec(objectResult.get().getClassifier()))){
+                        Evaluation evalResult = objectResult.get().getEvalClassifier();
+
+                        if(evalResult != null){
+                            List<Prediction> valuesPredict = evalResult.predictions();
+                            List<Prediction> aux = new ArrayList<>();
+                            int last = 0;
+                            int cont = objectResult.get().getInst().numInstances()/groups;
+
+                            for(int rest = 0; rest < cont; rest++){
+                                if((last+groups) < valuesPredict.size()){
+                                    for(int g = last; g < (last+groups); g++){
+                                        aux.add(valuesPredict.get(g));
+                                    }
+
+                                    double sumatorio = 0.0;
+
+                                    for(int a = 0; a < aux.size(); a++){
+                                        sumatorio += Math.pow(Math.abs(aux.get(a).actual() - aux.get(a).predicted()), 2);
+                                    }
+
+                                    double rmse = Math.sqrt(sumatorio/groups);
+
+                                    s += rmse + ";";
+                                    aux.clear();
+                                    last += groups;
+                                }
+                            }
+
+                            if(last < valuesPredict.size()){
+                                for(int g = last; g < valuesPredict.size(); g++){
+                                    aux.add(valuesPredict.get(g));
+                                }
+
+                                double sumatorio = 0.0;
+
+                                for(int a = 0; a < aux.size(); a++){
+                                    sumatorio += Math.pow(Math.abs(aux.get(a).actual() - aux.get(a).predicted()), 2);
+                                }
+
+                                double rmse = Math.sqrt(sumatorio/groups);
+
+                                s += rmse + ";";
+
+                                aux.clear();
+                            }
+                        }
+                    }
+                }
+            }
+
+            m.add(s);
+            s = "";
         }
         
         return m;
@@ -4560,7 +5248,12 @@ attrSelExpTabs.addTab("Results", results);
                         if(evalResult.predictions() != null){
                             try{
                                 int index = foundInstances(objectResult.get().getInst());
-                                sum += evalResult.precision(listClassPositive.get(index));
+                                
+                                if(Double.isNaN(evalResult.precision(listClassPositive.get(index)))){
+                                    sum += 0.0;
+                                }else{
+                                    sum += evalResult.precision(listClassPositive.get(index));
+                                }
                             } catch(InterruptedException | ExecutionException ex){
                                 sum += 0;
                                 
@@ -4616,7 +5309,12 @@ attrSelExpTabs.addTab("Results", results);
                         if(evalResult.predictions() != null){
                             try{
                                 int index = foundInstances(objectResult.get().getInst());
-                                sum += evalResult.recall(listClassPositive.get(index));
+                                
+                                if(Double.isNaN(evalResult.recall(listClassPositive.get(index)))){
+                                    sum += 0.0;
+                                }else{
+                                    sum += evalResult.recall(listClassPositive.get(index));
+                                }
                             } catch(InterruptedException | ExecutionException ex){
                                 sum += 0;
                                 
@@ -4672,7 +5370,12 @@ attrSelExpTabs.addTab("Results", results);
                         if(evalResult.predictions() != null){
                             try{
                                 int index = foundInstances(objectResult.get().getInst());
-                                sum += evalResult.fMeasure(listClassPositive.get(index));
+                                
+                                if(Double.isNaN(evalResult.fMeasure(listClassPositive.get(index)))){
+                                    sum += 0.0;
+                                }else{
+                                    sum += evalResult.fMeasure(listClassPositive.get(index));
+                                }
                             } catch(InterruptedException | ExecutionException ex){
                                 sum += 0;
                                 
@@ -4772,7 +5475,12 @@ attrSelExpTabs.addTab("Results", results);
                     if(evalResult != null && objectResult.get().getInst().classAttribute().isNominal()){
                         if(evalResult.predictions() != null){
                             int index = foundInstances(objectResult.get().getInst());
-                            sum += evalResult.matthewsCorrelationCoefficient(listClassPositive.get(index));   
+                            
+                            if(Double.isNaN(evalResult.matthewsCorrelationCoefficient(listClassPositive.get(index)))){
+                                sum += 0.0;
+                            }else{
+                                sum += evalResult.matthewsCorrelationCoefficient(listClassPositive.get(index));  
+                            }
                         }else{
                             sum += 0;
                         }  
@@ -4818,7 +5526,12 @@ attrSelExpTabs.addTab("Results", results);
                     if(evalResult != null && objectResult.get().getInst().classAttribute().isNominal()){
                         if(evalResult.predictions() != null){
                             int index = foundInstances(objectResult.get().getInst());
-                            sum += evalResult.areaUnderROC(listClassPositive.get(index));   
+                            
+                            if(Double.isNaN(evalResult.areaUnderROC(listClassPositive.get(index)))){
+                                sum += 0.0;
+                            }else{
+                                sum += evalResult.areaUnderROC(listClassPositive.get(index));
+                            }
                         }else{
                             sum += 0;
                         }  
@@ -6196,7 +6909,7 @@ attrSelExpTabs.addTab("Results", results);
         }
         
         for (SearchEvaluatorAndClassifier t : concurrentExp) {
-            t.setPercentThreads(Math.round(100/concurrentExp.size()));
+            t.setNumTareas(concurrentExp.size());
         }
         
         resultsAttrSelExp = new LinkedList<Future<ResultsAttrSelExp>>();
