@@ -6,8 +6,8 @@ import baycomp as bay
 def main(listM1, listM2):
     m1 = np.fromstring(listM1, dtype=float, sep=';')
     m2 = np.fromstring(listM2, dtype=float, sep=';')
-    r = bay.two_on_single(m1[0:np.size(m1)-1], m2[0:np.size(m2)-1], rope=1)
-    #r = bay.SignedRankTest.probs(m1[0:np.size(m1)-1], m2[0:np.size(m2)-1], rope=1)
+    #r = bay.two_on_single(m1[0:np.size(m1)-1], m2[0:np.size(m2)-1], rope=1)
+    r = bay.SignedRankTest.probs(m1[0:np.size(m1)-1], m2[0:np.size(m2)-1], rope=1)
     aux = np.asarray(r)
     f.write(np.array_str(aux)+"\n")
 

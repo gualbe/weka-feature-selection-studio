@@ -3158,20 +3158,28 @@ attrSelExpTabs.addTab("Results", results);
                 String[] aux1 = aux[0].split(" ");
                 String[] aux2 = aux[1].split(" ");
                 String[] metric = resultsBuff.get(i).replace("[" , "").replace("]", "").split(" ");
+                String[] auxMetric = new String[3];
+                int indexM = 0;
                 List<Double> max = new ArrayList<>();
-                max.add(Double.parseDouble(metric[0]));
-                max.add(Double.parseDouble(metric[1]));
-                max.add(Double.parseDouble(metric[2]));
+
+                for(int n = 0; n < metric.length; n++){
+                    if(!metric[n].equals("")){
+                        max.add(Double.parseDouble(metric[n]));
+                        auxMetric[indexM] = metric[n];
+                        indexM++;
+                    }
+                }
                 
                 Collections.sort(max);
-                        
-                if(max.get(max.size()-1).equals(Double.parseDouble(metric[0]))){
-                    statisticalTestTableModel.addRow(new Object[]{aux1[0], aux1[1], aux1[2], aux2[0], aux2[1], aux2[2], metric[0], metric[1], metric[2], "1"});
-                }else if(max.get(max.size()-1).equals(Double.parseDouble(metric[1]))){
-                    statisticalTestTableModel.addRow(new Object[]{aux1[0], aux1[1], aux1[2], aux2[0], aux2[1], aux2[2], metric[0], metric[1], metric[2], "0"});
+
+                if(max.get(max.size()-1).equals(Double.parseDouble(auxMetric[0]))){
+                    statisticalTestTableModel.addRow(new Object[]{aux1[0], aux1[1], aux1[2], aux2[0], aux2[1], aux2[2], auxMetric[0], auxMetric[1], auxMetric[2], "1"});
+                }else if(max.get(max.size()-1).equals(Double.parseDouble(auxMetric[1]))){
+                    statisticalTestTableModel.addRow(new Object[]{aux1[0], aux1[1], aux1[2], aux2[0], aux2[1], aux2[2], auxMetric[0], auxMetric[1], auxMetric[2], "0"});
                 }else{
-                    statisticalTestTableModel.addRow(new Object[]{aux1[0], aux1[1], aux1[2], aux2[0], aux2[1], aux2[2], metric[0], metric[1], metric[2], "2"});
+                    statisticalTestTableModel.addRow(new Object[]{aux1[0], aux1[1], aux1[2], aux2[0], aux2[1], aux2[2], auxMetric[0], auxMetric[1], auxMetric[2], "2"});
                 }
+                
             }
         } catch (IOException | InterruptedException ex) {  
             Logger.getLogger(AttrSelExp.class.getName()).log(Level.SEVERE, null, ex);
@@ -3212,7 +3220,7 @@ attrSelExpTabs.addTab("Results", results);
                                 if(Double.isNaN(evalResult.fMeasure(listClassPositive.get(index)))){
                                     s += 0.0 + ";";
                                 }else{
-                                    s += Double.toString(evalResult.fMeasure(listClassPositive.get(index))) + ";";
+                                    s += Double.toString(evalResult.fMeasure(listClassPositive.get(index))*100) + ";";
                                 }
                             }
                         }
@@ -3243,7 +3251,7 @@ attrSelExpTabs.addTab("Results", results);
                             if(Double.isNaN(evalResult.fMeasure(listClassPositive.get(index)))){
                                 s += 0.0 + ";";
                             }else{
-                                s += Double.toString(evalResult.fMeasure(listClassPositive.get(index))) + ";";
+                                s += Double.toString(evalResult.fMeasure(listClassPositive.get(index))*100) + ";";
                             }
                         }
                     }
@@ -3276,7 +3284,11 @@ attrSelExpTabs.addTab("Results", results);
                             Evaluation evalResult = objectResult.get().getEvalClassifier();
 
                             if(evalResult != null){
-                                s += Double.toString(evalResult.pctCorrect()) + ";";
+                                if(Double.isNaN(evalResult.pctCorrect())){
+                                    s += 0.0 + ";";
+                                }else{
+                                    s += Double.toString(evalResult.pctCorrect()) + ";";
+                                }
                             }
                         }
                     }
@@ -3301,7 +3313,11 @@ attrSelExpTabs.addTab("Results", results);
                         Evaluation evalResult = objectResult.get().getEvalClassifier();
 
                         if(evalResult != null){
-                            s += Double.toString(evalResult.pctCorrect()) + ";";
+                            if(Double.isNaN(evalResult.pctCorrect())){
+                                s += 0.0 + ";";
+                            }else{
+                                s += Double.toString(evalResult.pctCorrect()) + ";";
+                            }
                         }
                     }
                 }
@@ -3338,7 +3354,7 @@ attrSelExpTabs.addTab("Results", results);
                                 if(Double.isNaN(evalResult.precision(listClassPositive.get(index)))){
                                     s += 0.0 + ";";
                                 }else{
-                                    s += Double.toString(evalResult.precision(listClassPositive.get(index))) + ";";
+                                    s += Double.toString(evalResult.precision(listClassPositive.get(index))*100) + ";";
                                 }
                             }
                         }
@@ -3369,7 +3385,7 @@ attrSelExpTabs.addTab("Results", results);
                             if(Double.isNaN(evalResult.precision(listClassPositive.get(index)))){
                                 s += 0.0 + ";";
                             }else{
-                                s += Double.toString(evalResult.precision(listClassPositive.get(index))) + ";";
+                                s += Double.toString(evalResult.precision(listClassPositive.get(index))*100) + ";";
                             }
                         }
                     }
@@ -3407,7 +3423,7 @@ attrSelExpTabs.addTab("Results", results);
                                 if(Double.isNaN(evalResult.recall(listClassPositive.get(index)))){
                                     s += 0.0 + ";";
                                 }else{
-                                    s += Double.toString(evalResult.recall(listClassPositive.get(index))) + ";";
+                                    s += Double.toString(evalResult.recall(listClassPositive.get(index))*100) + ";";
                                 }
                             }
                         }
@@ -3438,7 +3454,7 @@ attrSelExpTabs.addTab("Results", results);
                             if(Double.isNaN(evalResult.recall(listClassPositive.get(index)))){
                                 s += 0.0 + ";";
                             }else{
-                                s += Double.toString(evalResult.recall(listClassPositive.get(index))) + ";";
+                                s += Double.toString(evalResult.recall(listClassPositive.get(index))*100) + ";";
                             }
                         }
                     }
@@ -3471,7 +3487,7 @@ attrSelExpTabs.addTab("Results", results);
                             Evaluation evalResult = objectResult.get().getEvalClassifier();
 
                             if(evalResult != null){
-                                s += Double.toString(evalResult.kappa()) + ";";
+                                s += Double.toString(evalResult.kappa()*100) + ";";
                             }
                         }
                     }
@@ -3496,7 +3512,7 @@ attrSelExpTabs.addTab("Results", results);
                         Evaluation evalResult = objectResult.get().getEvalClassifier();
 
                         if(evalResult != null){
-                            s += Double.toString(evalResult.kappa()) + ";";
+                            s += Double.toString(evalResult.kappa()*100) + ";";
                         }
                     }
                 }
@@ -3533,7 +3549,7 @@ attrSelExpTabs.addTab("Results", results);
                                 if(Double.isNaN(evalResult.matthewsCorrelationCoefficient(listClassPositive.get(index)))){
                                     s += 0.0 + ";";
                                 }else{
-                                    s += Double.toString(evalResult.matthewsCorrelationCoefficient(listClassPositive.get(index))) + ";";
+                                    s += Double.toString(evalResult.matthewsCorrelationCoefficient(listClassPositive.get(index))*100) + ";";
                                 }
                             }
                         }
@@ -3564,7 +3580,7 @@ attrSelExpTabs.addTab("Results", results);
                             if(Double.isNaN(evalResult.matthewsCorrelationCoefficient(listClassPositive.get(index)))){
                                 s += 0.0 + ";";
                             }else{
-                                s += Double.toString(evalResult.matthewsCorrelationCoefficient(listClassPositive.get(index))) + ";";
+                                s += Double.toString(evalResult.matthewsCorrelationCoefficient(listClassPositive.get(index))*100) + ";";
                             }
                         }
                     }
@@ -3602,7 +3618,7 @@ attrSelExpTabs.addTab("Results", results);
                                 if(Double.isNaN(evalResult.areaUnderROC(listClassPositive.get(index)))){
                                     s += 0.0 + ";";
                                 }else{
-                                    s += Double.toString(evalResult.areaUnderROC(listClassPositive.get(index))) + ";";
+                                    s += Double.toString(evalResult.areaUnderROC(listClassPositive.get(index))*100) + ";";
                                 }
                             }
                         }
@@ -3633,7 +3649,7 @@ attrSelExpTabs.addTab("Results", results);
                             if(Double.isNaN(evalResult.areaUnderROC(listClassPositive.get(index)))){
                                 s += 0.0 + ";";
                             }else{
-                                s += Double.toString(evalResult.areaUnderROC(listClassPositive.get(index))) + ";";
+                                s += Double.toString(evalResult.areaUnderROC(listClassPositive.get(index))*100) + ";";
                             }
                         }
                     }
@@ -3666,7 +3682,7 @@ attrSelExpTabs.addTab("Results", results);
                             Evaluation evalResult = objectResult.get().getEvalClassifier();
 
                             if(evalResult != null){
-                                s += Double.toString(evalResult.meanAbsoluteError()) + ";";
+                                s += Double.toString(evalResult.meanAbsoluteError()*100) + ";";
                             }
                         }
                     }
@@ -3691,7 +3707,7 @@ attrSelExpTabs.addTab("Results", results);
                         Evaluation evalResult = objectResult.get().getEvalClassifier();
 
                         if(evalResult != null){
-                            s += Double.toString(evalResult.meanAbsoluteError()) + ";";
+                            s += Double.toString(evalResult.meanAbsoluteError()*100) + ";";
                         }
                     }
                 }
@@ -4944,9 +4960,9 @@ attrSelExpTabs.addTab("Results", results);
             }
         }else{
             if(leaveOneOutBtn.isSelected()){
-                dataComboBox = new String[]{"MAE", "RMSE"};
+                dataComboBox = new String[]{"RMSE", "MAE"};
             }else{
-                dataComboBox = new String[]{"MAE", "MSE", "RMSE", "MAPE", "R2"};
+                dataComboBox = new String[]{"MSE", "MAE", "RMSE", "MAPE", "R2"};
             }
         }
 
@@ -4979,7 +4995,7 @@ attrSelExpTabs.addTab("Results", results);
             }
             
             if(!dif){
-                metricStatisComboBox.setSelectedIndex(0);
+                metricStatisComboBox.setSelectedIndex(1);
             }else{
                 m_Log.logMessage("Some of the datasets are not numeric, so the statistical test cannot be done.");
             }
@@ -5574,7 +5590,7 @@ attrSelExpTabs.addTab("Results", results);
                 if(e.equals(metricsTableModel.getValueAt(j, 1)) && s.equals(metricsTableModel.getValueAt(j, 2)) && c.equals(metricsTableModel.getValueAt(j, 3)) && objectResult.get().getInst().relationName().equals(metricsTableModel.getValueAt(j, 0))){
                     Evaluation evalResult = objectResult.get().getEvalClassifier();
 
-                    if(evalResult != null && objectResult.get().getInst().classAttribute().isNominal()){
+                    if(evalResult != null && !objectResult.get().getInst().classAttribute().isNominal()){
                         if(evalResult.predictions() != null){
                             sum += evalResult.meanAbsoluteError();   
                         }else{
@@ -5619,7 +5635,7 @@ attrSelExpTabs.addTab("Results", results);
                 if(e.equals(metricsTableModel.getValueAt(j, 1)) && s.equals(metricsTableModel.getValueAt(j, 2)) && c.equals(metricsTableModel.getValueAt(j, 3)) && objectResult.get().getInst().relationName().equals(metricsTableModel.getValueAt(j, 0))){
                     Evaluation evalResult = objectResult.get().getEvalClassifier();
 
-                    if(evalResult != null && objectResult.get().getInst().classAttribute().isNominal()){
+                    if(evalResult != null && !objectResult.get().getInst().classAttribute().isNominal()){
                         if(evalResult.predictions() != null){
                             sum += Math.pow(evalResult.rootMeanSquaredError(), 2);   
                         }else{
@@ -5664,7 +5680,7 @@ attrSelExpTabs.addTab("Results", results);
                 if(e.equals(metricsTableModel.getValueAt(j, 1)) && s.equals(metricsTableModel.getValueAt(j, 2)) && c.equals(metricsTableModel.getValueAt(j, 3)) && objectResult.get().getInst().relationName().equals(metricsTableModel.getValueAt(j, 0))){
                     Evaluation evalResult = objectResult.get().getEvalClassifier();
 
-                    if(evalResult != null && objectResult.get().getInst().classAttribute().isNominal()){
+                    if(evalResult != null && !objectResult.get().getInst().classAttribute().isNominal()){
                         if(evalResult.predictions() != null){
                             sum += evalResult.rootMeanSquaredError();   
                         }else{
@@ -5710,7 +5726,7 @@ attrSelExpTabs.addTab("Results", results);
                 if(e.equals(metricsTableModel.getValueAt(j, 1)) && s.equals(metricsTableModel.getValueAt(j, 2)) && c.equals(metricsTableModel.getValueAt(j, 3)) && objectResult.get().getInst().relationName().equals(metricsTableModel.getValueAt(j, 0))){
                     Evaluation evalResult = objectResult.get().getEvalClassifier();
 
-                    if(evalResult != null && objectResult.get().getInst().classAttribute().isNominal()){
+                    if(evalResult != null && !objectResult.get().getInst().classAttribute().isNominal()){
                         if(evalResult.predictions() != null){
                             try{
                                 double aux = 0.0;
@@ -5774,7 +5790,7 @@ attrSelExpTabs.addTab("Results", results);
                 if(e.equals(metricsTableModel.getValueAt(j, 1)) && s.equals(metricsTableModel.getValueAt(j, 2)) && c.equals(metricsTableModel.getValueAt(j, 3)) && objectResult.get().getInst().relationName().equals(metricsTableModel.getValueAt(j, 0))){
                     Evaluation evalResult = objectResult.get().getEvalClassifier();
 
-                    if(evalResult != null && objectResult.get().getInst().classAttribute().isNominal()){
+                    if(evalResult != null && !objectResult.get().getInst().classAttribute().isNominal()){
                         if(evalResult.predictions() != null){
                             try {   
                                 sum += evalResult.correlationCoefficient();
