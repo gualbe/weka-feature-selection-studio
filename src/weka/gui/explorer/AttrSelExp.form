@@ -100,13 +100,14 @@
                     <Component class="javax.swing.JTable" name="datasetsTable">
                       <Properties>
                         <Property name="model" type="javax.swing.table.TableModel" editor="org.netbeans.modules.form.editors2.TableModelEditor">
-                          <Table columnCount="6" rowCount="0">
+                          <Table columnCount="7" rowCount="0">
                             <Column editable="false" title="Relation" type="java.lang.String"/>
                             <Column editable="false" title="Instances" type="java.lang.Integer"/>
                             <Column editable="false" title="Attributes" type="java.lang.Integer"/>
                             <Column editable="false" title="Number classes" type="java.lang.Integer"/>
                             <Column editable="false" title="Class" type="java.lang.String"/>
                             <Column editable="false" title="Positive class" type="java.lang.String"/>
+                            <Column editable="false" title="Index" type="java.lang.Integer"/>
                           </Table>
                         </Property>
                         <Property name="columnModel" type="javax.swing.table.TableColumnModel" editor="org.netbeans.modules.form.editors2.TableColumnModelEditor">
@@ -137,6 +138,11 @@
                               <Renderer/>
                             </Column>
                             <Column maxWidth="-1" minWidth="-1" prefWidth="-1" resizable="true">
+                              <Title/>
+                              <Editor/>
+                              <Renderer/>
+                            </Column>
+                            <Column maxWidth="0" minWidth="0" prefWidth="0" resizable="true">
                               <Title/>
                               <Editor/>
                               <Renderer/>
@@ -1062,6 +1068,7 @@
                 <Component class="javax.swing.JButton" name="saveCSVPredictionsBtn">
                   <Properties>
                     <Property name="text" type="java.lang.String" value="Save to CSV"/>
+                    <Property name="toolTipText" type="java.lang.String" value="Save to CSV"/>
                   </Properties>
                   <Events>
                     <EventHandler event="actionPerformed" listener="java.awt.event.ActionListener" parameters="java.awt.event.ActionEvent" handler="saveCSVPredictionsBtnActionPerformed"/>
@@ -1075,6 +1082,7 @@
                 <Component class="javax.swing.JButton" name="saveARFFPredictionsBtn">
                   <Properties>
                     <Property name="text" type="java.lang.String" value="Save to ARFF"/>
+                    <Property name="toolTipText" type="java.lang.String" value="Save to ARFF"/>
                   </Properties>
                   <Events>
                     <EventHandler event="actionPerformed" listener="java.awt.event.ActionListener" parameters="java.awt.event.ActionEvent" handler="saveARFFPredictionsBtnActionPerformed"/>
@@ -1088,6 +1096,7 @@
                 <Component class="javax.swing.JButton" name="loadDatasetPredictionsBtn">
                   <Properties>
                     <Property name="text" type="java.lang.String" value="Put to Preprocess"/>
+                    <Property name="toolTipText" type="java.lang.String" value="Put to Preprocess"/>
                   </Properties>
                   <Events>
                     <EventHandler event="actionPerformed" listener="java.awt.event.ActionListener" parameters="java.awt.event.ActionEvent" handler="loadDatasetPredictionsBtnActionPerformed"/>
@@ -1101,6 +1110,7 @@
                 <Component class="javax.swing.JButton" name="updatePredictionsBtn">
                   <Properties>
                     <Property name="text" type="java.lang.String" value="Update"/>
+                    <Property name="toolTipText" type="java.lang.String" value="Update"/>
                   </Properties>
                   <Events>
                     <EventHandler event="actionPerformed" listener="java.awt.event.ActionListener" parameters="java.awt.event.ActionEvent" handler="updatePredictionsBtnActionPerformed"/>
@@ -1331,6 +1341,7 @@
                 <Component class="javax.swing.JButton" name="saveCSVMetricsBtn">
                   <Properties>
                     <Property name="text" type="java.lang.String" value="Save to CSV"/>
+                    <Property name="toolTipText" type="java.lang.String" value="Save to CSV"/>
                   </Properties>
                   <Events>
                     <EventHandler event="actionPerformed" listener="java.awt.event.ActionListener" parameters="java.awt.event.ActionEvent" handler="saveCSVMetricsBtnActionPerformed"/>
@@ -1344,6 +1355,7 @@
                 <Component class="javax.swing.JButton" name="saveARFFMetricsBtn">
                   <Properties>
                     <Property name="text" type="java.lang.String" value="Save to ARFF"/>
+                    <Property name="toolTipText" type="java.lang.String" value="Save to ARFF"/>
                   </Properties>
                   <Events>
                     <EventHandler event="actionPerformed" listener="java.awt.event.ActionListener" parameters="java.awt.event.ActionEvent" handler="saveARFFMetricsBtnActionPerformed"/>
@@ -1357,6 +1369,7 @@
                 <Component class="javax.swing.JButton" name="loadDatasetMetricsBtn">
                   <Properties>
                     <Property name="text" type="java.lang.String" value="Put to Preprocess"/>
+                    <Property name="toolTipText" type="java.lang.String" value="Put to Preprocess"/>
                   </Properties>
                   <Events>
                     <EventHandler event="actionPerformed" listener="java.awt.event.ActionListener" parameters="java.awt.event.ActionEvent" handler="loadDatasetMetricsBtnActionPerformed"/>
@@ -1558,6 +1571,7 @@
                 <Component class="javax.swing.JButton" name="saveLatexMetricsBtn">
                   <Properties>
                     <Property name="text" type="java.lang.String" value="Save to Latex"/>
+                    <Property name="toolTipText" type="java.lang.String" value="Save to Latex"/>
                   </Properties>
                   <Events>
                     <EventHandler event="actionPerformed" listener="java.awt.event.ActionListener" parameters="java.awt.event.ActionEvent" handler="saveLatexMetricsBtnActionPerformed"/>
@@ -1723,6 +1737,7 @@
                 <Component class="javax.swing.JButton" name="savePDFGraphBtn">
                   <Properties>
                     <Property name="text" type="java.lang.String" value="Save to PDF"/>
+                    <Property name="toolTipText" type="java.lang.String" value="Save to PDF"/>
                     <Property name="maximumSize" type="java.awt.Dimension" editor="org.netbeans.beaninfo.editors.DimensionEditor">
                       <Dimension value="[98, 23]"/>
                     </Property>
@@ -1745,6 +1760,7 @@
                 <Component class="javax.swing.JButton" name="savePNGGraphBtn">
                   <Properties>
                     <Property name="text" type="java.lang.String" value="Save to PNG"/>
+                    <Property name="toolTipText" type="java.lang.String" value="Save to PNG"/>
                     <Property name="maximumSize" type="java.awt.Dimension" editor="org.netbeans.beaninfo.editors.DimensionEditor">
                       <Dimension value="[98, 23]"/>
                     </Property>
@@ -1767,6 +1783,7 @@
                 <Component class="javax.swing.JButton" name="updateGraphBtn">
                   <Properties>
                     <Property name="text" type="java.lang.String" value="Update"/>
+                    <Property name="toolTipText" type="java.lang.String" value="Update"/>
                     <Property name="maximumSize" type="java.awt.Dimension" editor="org.netbeans.beaninfo.editors.DimensionEditor">
                       <Dimension value="[85, 23]"/>
                     </Property>
@@ -1867,7 +1884,7 @@
                   </Properties>
                   <Constraints>
                     <Constraint layoutClass="org.netbeans.modules.form.compat2.layouts.DesignGridBagLayout" value="org.netbeans.modules.form.compat2.layouts.DesignGridBagLayout$GridBagConstraintsDescription">
-                      <GridBagConstraints gridX="1" gridY="1" gridWidth="1" gridHeight="1" fill="0" ipadX="0" ipadY="0" insetsTop="0" insetsLeft="0" insetsBottom="0" insetsRight="0" anchor="10" weightX="0.0" weightY="0.0"/>
+                      <GridBagConstraints gridX="1" gridY="1" gridWidth="1" gridHeight="1" fill="0" ipadX="0" ipadY="0" insetsTop="0" insetsLeft="0" insetsBottom="0" insetsRight="0" anchor="17" weightX="0.0" weightY="0.0"/>
                     </Constraint>
                   </Constraints>
                 </Component>
@@ -1877,7 +1894,7 @@
                   </Properties>
                   <Constraints>
                     <Constraint layoutClass="org.netbeans.modules.form.compat2.layouts.DesignGridBagLayout" value="org.netbeans.modules.form.compat2.layouts.DesignGridBagLayout$GridBagConstraintsDescription">
-                      <GridBagConstraints gridX="1" gridY="2" gridWidth="1" gridHeight="1" fill="0" ipadX="0" ipadY="0" insetsTop="0" insetsLeft="0" insetsBottom="0" insetsRight="0" anchor="10" weightX="0.0" weightY="0.0"/>
+                      <GridBagConstraints gridX="1" gridY="2" gridWidth="1" gridHeight="1" fill="0" ipadX="0" ipadY="0" insetsTop="0" insetsLeft="0" insetsBottom="0" insetsRight="0" anchor="17" weightX="0.0" weightY="0.0"/>
                     </Constraint>
                   </Constraints>
                 </Component>
@@ -1887,7 +1904,7 @@
                   </Properties>
                   <Constraints>
                     <Constraint layoutClass="org.netbeans.modules.form.compat2.layouts.DesignGridBagLayout" value="org.netbeans.modules.form.compat2.layouts.DesignGridBagLayout$GridBagConstraintsDescription">
-                      <GridBagConstraints gridX="0" gridY="6" gridWidth="1" gridHeight="1" fill="0" ipadX="0" ipadY="0" insetsTop="0" insetsLeft="0" insetsBottom="0" insetsRight="0" anchor="13" weightX="0.0" weightY="0.0"/>
+                      <GridBagConstraints gridX="0" gridY="7" gridWidth="1" gridHeight="1" fill="0" ipadX="0" ipadY="0" insetsTop="0" insetsLeft="0" insetsBottom="0" insetsRight="0" anchor="13" weightX="0.0" weightY="0.0"/>
                     </Constraint>
                   </Constraints>
                 </Component>
@@ -1912,33 +1929,35 @@
                   </AuxValues>
                   <Constraints>
                     <Constraint layoutClass="org.netbeans.modules.form.compat2.layouts.DesignGridBagLayout" value="org.netbeans.modules.form.compat2.layouts.DesignGridBagLayout$GridBagConstraintsDescription">
-                      <GridBagConstraints gridX="1" gridY="6" gridWidth="2" gridHeight="1" fill="2" ipadX="0" ipadY="0" insetsTop="0" insetsLeft="0" insetsBottom="0" insetsRight="0" anchor="10" weightX="0.0" weightY="0.0"/>
+                      <GridBagConstraints gridX="1" gridY="7" gridWidth="2" gridHeight="1" fill="2" ipadX="0" ipadY="0" insetsTop="0" insetsLeft="0" insetsBottom="0" insetsRight="0" anchor="10" weightX="0.0" weightY="0.0"/>
                     </Constraint>
                   </Constraints>
                 </Component>
                 <Component class="javax.swing.JButton" name="saveCSVStatisBtn">
                   <Properties>
                     <Property name="text" type="java.lang.String" value="Save to CSV"/>
+                    <Property name="toolTipText" type="java.lang.String" value="Save to CSV"/>
                   </Properties>
                   <Events>
                     <EventHandler event="actionPerformed" listener="java.awt.event.ActionListener" parameters="java.awt.event.ActionEvent" handler="saveCSVStatisBtnActionPerformed"/>
                   </Events>
                   <Constraints>
                     <Constraint layoutClass="org.netbeans.modules.form.compat2.layouts.DesignGridBagLayout" value="org.netbeans.modules.form.compat2.layouts.DesignGridBagLayout$GridBagConstraintsDescription">
-                      <GridBagConstraints gridX="3" gridY="6" gridWidth="1" gridHeight="1" fill="0" ipadX="0" ipadY="0" insetsTop="0" insetsLeft="0" insetsBottom="0" insetsRight="0" anchor="10" weightX="0.0" weightY="0.0"/>
+                      <GridBagConstraints gridX="3" gridY="7" gridWidth="1" gridHeight="1" fill="0" ipadX="0" ipadY="0" insetsTop="0" insetsLeft="0" insetsBottom="0" insetsRight="0" anchor="10" weightX="0.0" weightY="0.0"/>
                     </Constraint>
                   </Constraints>
                 </Component>
                 <Component class="javax.swing.JButton" name="putPreprocessStatisBtn">
                   <Properties>
                     <Property name="text" type="java.lang.String" value="Put to Preprocess"/>
+                    <Property name="toolTipText" type="java.lang.String" value="Put to Preprocess"/>
                   </Properties>
                   <Events>
                     <EventHandler event="actionPerformed" listener="java.awt.event.ActionListener" parameters="java.awt.event.ActionEvent" handler="putPreprocessStatisBtnActionPerformed"/>
                   </Events>
                   <Constraints>
                     <Constraint layoutClass="org.netbeans.modules.form.compat2.layouts.DesignGridBagLayout" value="org.netbeans.modules.form.compat2.layouts.DesignGridBagLayout$GridBagConstraintsDescription">
-                      <GridBagConstraints gridX="4" gridY="6" gridWidth="1" gridHeight="1" fill="0" ipadX="0" ipadY="0" insetsTop="0" insetsLeft="0" insetsBottom="0" insetsRight="0" anchor="17" weightX="0.0" weightY="0.0"/>
+                      <GridBagConstraints gridX="4" gridY="7" gridWidth="1" gridHeight="1" fill="0" ipadX="0" ipadY="0" insetsTop="0" insetsLeft="0" insetsBottom="0" insetsRight="0" anchor="17" weightX="0.0" weightY="0.0"/>
                     </Constraint>
                   </Constraints>
                 </Component>
@@ -1948,7 +1967,7 @@
                   </AuxValues>
                   <Constraints>
                     <Constraint layoutClass="org.netbeans.modules.form.compat2.layouts.DesignGridBagLayout" value="org.netbeans.modules.form.compat2.layouts.DesignGridBagLayout$GridBagConstraintsDescription">
-                      <GridBagConstraints gridX="0" gridY="5" gridWidth="5" gridHeight="1" fill="1" ipadX="0" ipadY="0" insetsTop="0" insetsLeft="0" insetsBottom="0" insetsRight="0" anchor="10" weightX="1.0" weightY="1.0"/>
+                      <GridBagConstraints gridX="0" gridY="6" gridWidth="5" gridHeight="1" fill="1" ipadX="0" ipadY="0" insetsTop="0" insetsLeft="0" insetsBottom="0" insetsRight="0" anchor="10" weightX="1.0" weightY="1.0"/>
                     </Constraint>
                   </Constraints>
 
@@ -1964,9 +1983,9 @@
                             <Column editable="false" title="Evaluator #2" type="java.lang.String"/>
                             <Column editable="false" title="Search #2" type="java.lang.String"/>
                             <Column editable="false" title="Algorithm #2" type="java.lang.String"/>
-                            <Column editable="false" title="p(left)" type="java.lang.String"/>
-                            <Column editable="false" title="p(no)" type="java.lang.String"/>
-                            <Column editable="false" title="p(right)" type="java.lang.String"/>
+                            <Column editable="false" title="p(left)" type="java.lang.Double"/>
+                            <Column editable="false" title="p(no)" type="java.lang.Double"/>
+                            <Column editable="false" title="p(right)" type="java.lang.Double"/>
                             <Column editable="false" title="Test" type="java.lang.String"/>
                           </Table>
                         </Property>
@@ -2035,7 +2054,7 @@
                 <Component class="javax.swing.JLabel" name="messageNormTestLabel">
                   <Constraints>
                     <Constraint layoutClass="org.netbeans.modules.form.compat2.layouts.DesignGridBagLayout" value="org.netbeans.modules.form.compat2.layouts.DesignGridBagLayout$GridBagConstraintsDescription">
-                      <GridBagConstraints gridX="0" gridY="4" gridWidth="3" gridHeight="1" fill="0" ipadX="0" ipadY="0" insetsTop="0" insetsLeft="0" insetsBottom="0" insetsRight="0" anchor="17" weightX="0.0" weightY="0.0"/>
+                      <GridBagConstraints gridX="0" gridY="5" gridWidth="3" gridHeight="1" fill="0" ipadX="0" ipadY="0" insetsTop="0" insetsLeft="0" insetsBottom="0" insetsRight="0" anchor="17" weightX="0.0" weightY="0.0"/>
                     </Constraint>
                   </Constraints>
                 </Component>
@@ -2043,9 +2062,42 @@
                   <Properties>
                     <Property name="text" type="java.lang.String" value="30"/>
                   </Properties>
+                  <Events>
+                    <EventHandler event="actionPerformed" listener="java.awt.event.ActionListener" parameters="java.awt.event.ActionEvent" handler="valueGroupsLOOTextFieldActionPerformed"/>
+                  </Events>
                   <Constraints>
                     <Constraint layoutClass="org.netbeans.modules.form.compat2.layouts.DesignGridBagLayout" value="org.netbeans.modules.form.compat2.layouts.DesignGridBagLayout$GridBagConstraintsDescription">
                       <GridBagConstraints gridX="1" gridY="3" gridWidth="1" gridHeight="1" fill="0" ipadX="0" ipadY="0" insetsTop="0" insetsLeft="0" insetsBottom="0" insetsRight="0" anchor="10" weightX="0.0" weightY="0.0"/>
+                    </Constraint>
+                  </Constraints>
+                </Component>
+                <Component class="javax.swing.JLabel" name="ropeLabel">
+                  <Properties>
+                    <Property name="text" type="java.lang.String" value="Rope:"/>
+                  </Properties>
+                  <Constraints>
+                    <Constraint layoutClass="org.netbeans.modules.form.compat2.layouts.DesignGridBagLayout" value="org.netbeans.modules.form.compat2.layouts.DesignGridBagLayout$GridBagConstraintsDescription">
+                      <GridBagConstraints gridX="0" gridY="4" gridWidth="1" gridHeight="1" fill="0" ipadX="0" ipadY="0" insetsTop="0" insetsLeft="0" insetsBottom="0" insetsRight="0" anchor="17" weightX="0.0" weightY="0.0"/>
+                    </Constraint>
+                  </Constraints>
+                </Component>
+                <Component class="javax.swing.JTextField" name="ropeTextField">
+                  <Properties>
+                    <Property name="text" type="java.lang.String" value="1"/>
+                  </Properties>
+                  <Events>
+                    <EventHandler event="actionPerformed" listener="java.awt.event.ActionListener" parameters="java.awt.event.ActionEvent" handler="ropeTextFieldActionPerformed"/>
+                  </Events>
+                  <Constraints>
+                    <Constraint layoutClass="org.netbeans.modules.form.compat2.layouts.DesignGridBagLayout" value="org.netbeans.modules.form.compat2.layouts.DesignGridBagLayout$GridBagConstraintsDescription">
+                      <GridBagConstraints gridX="1" gridY="4" gridWidth="1" gridHeight="1" fill="0" ipadX="0" ipadY="0" insetsTop="0" insetsLeft="0" insetsBottom="0" insetsRight="0" anchor="10" weightX="0.0" weightY="0.0"/>
+                    </Constraint>
+                  </Constraints>
+                </Component>
+                <Component class="javax.swing.JLabel" name="messagesStatis">
+                  <Constraints>
+                    <Constraint layoutClass="org.netbeans.modules.form.compat2.layouts.DesignGridBagLayout" value="org.netbeans.modules.form.compat2.layouts.DesignGridBagLayout$GridBagConstraintsDescription">
+                      <GridBagConstraints gridX="3" gridY="0" gridWidth="2" gridHeight="1" fill="0" ipadX="0" ipadY="0" insetsTop="0" insetsLeft="0" insetsBottom="0" insetsRight="0" anchor="10" weightX="0.0" weightY="0.0"/>
                     </Constraint>
                   </Constraints>
                 </Component>

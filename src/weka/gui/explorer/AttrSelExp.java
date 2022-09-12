@@ -128,6 +128,7 @@ import weka.core.converters.ConverterUtils.DataSink;
 import weka.core.converters.ConverterUtils.DataSource;
 import weka.core.converters.DatabaseSaver;
 import weka.filters.Filter;
+import weka.filters.unsupervised.attribute.StringToNominal;
 
 /**
  *
@@ -256,6 +257,8 @@ public class AttrSelExp extends javax.swing.JPanel implements Explorer.ExplorerP
 
         //tables of the Jpanel
         datasetsTableModel = (DefaultTableModel) datasetsTable.getModel();
+        TableRowSorter<DefaultTableModel> sorterDatasetsTable = new TableRowSorter<>(datasetsTableModel);
+        datasetsTable.setRowSorter(sorterDatasetsTable);
         featuresTableModel = (DefaultTableModel) featuresTable.getModel();
         classifierTableModel = (DefaultTableModel) classifierTable.getModel();
         predictionsTableModel = (DefaultTableModel) predictionsTable.getModel();
@@ -425,6 +428,9 @@ public class AttrSelExp extends javax.swing.JPanel implements Explorer.ExplorerP
         statisticalTestTable = new javax.swing.JTable();
         messageNormTestLabel = new javax.swing.JLabel();
         valueGroupsLOOTextField = new javax.swing.JTextField();
+        ropeLabel = new javax.swing.JLabel();
+        ropeTextField = new javax.swing.JTextField();
+        messagesStatis = new javax.swing.JLabel();
 
         validationRadioBtn.add(holdOutSplitBtn);
         validationRadioBtn.add(crossValidationBtn);
@@ -467,14 +473,14 @@ public class AttrSelExp extends javax.swing.JPanel implements Explorer.ExplorerP
 
             },
             new String [] {
-                "Relation", "Instances", "Attributes", "Number classes", "Class", "Positive class"
+                "Relation", "Instances", "Attributes", "Number classes", "Class", "Positive class", "Index"
             }
         ) {
             Class[] types = new Class [] {
-                java.lang.String.class, java.lang.Integer.class, java.lang.Integer.class, java.lang.Integer.class, java.lang.String.class, java.lang.String.class
+                java.lang.String.class, java.lang.Integer.class, java.lang.Integer.class, java.lang.Integer.class, java.lang.String.class, java.lang.String.class, java.lang.Integer.class
             };
             boolean[] canEdit = new boolean [] {
-                false, false, false, false, false, false
+                false, false, false, false, false, false, false
             };
 
             public Class getColumnClass(int columnIndex) {
@@ -491,6 +497,11 @@ public class AttrSelExp extends javax.swing.JPanel implements Explorer.ExplorerP
             }
         });
         datasetsScrollPane.setViewportView(datasetsTable);
+        if (datasetsTable.getColumnModel().getColumnCount() > 0) {
+            datasetsTable.getColumnModel().getColumn(6).setMinWidth(0);
+            datasetsTable.getColumnModel().getColumn(6).setPreferredWidth(0);
+            datasetsTable.getColumnModel().getColumn(6).setMaxWidth(0);
+        }
 
         gridBagConstraints = new java.awt.GridBagConstraints();
         gridBagConstraints.gridx = 0;
@@ -1150,6 +1161,7 @@ validation.setBorder(BorderFactory.createCompoundBorder(
     predictions.add(attributesTextField, gridBagConstraints);
 
     saveCSVPredictionsBtn.setText("Save to CSV");
+    saveCSVPredictionsBtn.setToolTipText("Save to CSV");
     saveCSVPredictionsBtn.addActionListener(new java.awt.event.ActionListener() {
         public void actionPerformed(java.awt.event.ActionEvent evt) {
             saveCSVPredictionsBtnActionPerformed(evt);
@@ -1161,6 +1173,7 @@ validation.setBorder(BorderFactory.createCompoundBorder(
     predictions.add(saveCSVPredictionsBtn, gridBagConstraints);
 
     saveARFFPredictionsBtn.setText("Save to ARFF");
+    saveARFFPredictionsBtn.setToolTipText("Save to ARFF");
     saveARFFPredictionsBtn.addActionListener(new java.awt.event.ActionListener() {
         public void actionPerformed(java.awt.event.ActionEvent evt) {
             saveARFFPredictionsBtnActionPerformed(evt);
@@ -1172,6 +1185,7 @@ validation.setBorder(BorderFactory.createCompoundBorder(
     predictions.add(saveARFFPredictionsBtn, gridBagConstraints);
 
     loadDatasetPredictionsBtn.setText("Put to Preprocess");
+    loadDatasetPredictionsBtn.setToolTipText("Put to Preprocess");
     loadDatasetPredictionsBtn.addActionListener(new java.awt.event.ActionListener() {
         public void actionPerformed(java.awt.event.ActionEvent evt) {
             loadDatasetPredictionsBtnActionPerformed(evt);
@@ -1184,6 +1198,7 @@ validation.setBorder(BorderFactory.createCompoundBorder(
     predictions.add(loadDatasetPredictionsBtn, gridBagConstraints);
 
     updatePredictionsBtn.setText("Update");
+    updatePredictionsBtn.setToolTipText("Update");
     updatePredictionsBtn.addActionListener(new java.awt.event.ActionListener() {
         public void actionPerformed(java.awt.event.ActionEvent evt) {
             updatePredictionsBtnActionPerformed(evt);
@@ -1358,6 +1373,7 @@ predictions.setBorder(BorderFactory.createCompoundBorder(
     metrics.add(metricsScrollPane, gridBagConstraints);
 
     saveCSVMetricsBtn.setText("Save to CSV");
+    saveCSVMetricsBtn.setToolTipText("Save to CSV");
     saveCSVMetricsBtn.addActionListener(new java.awt.event.ActionListener() {
         public void actionPerformed(java.awt.event.ActionEvent evt) {
             saveCSVMetricsBtnActionPerformed(evt);
@@ -1369,6 +1385,7 @@ predictions.setBorder(BorderFactory.createCompoundBorder(
     metrics.add(saveCSVMetricsBtn, gridBagConstraints);
 
     saveARFFMetricsBtn.setText("Save to ARFF");
+    saveARFFMetricsBtn.setToolTipText("Save to ARFF");
     saveARFFMetricsBtn.addActionListener(new java.awt.event.ActionListener() {
         public void actionPerformed(java.awt.event.ActionEvent evt) {
             saveARFFMetricsBtnActionPerformed(evt);
@@ -1380,6 +1397,7 @@ predictions.setBorder(BorderFactory.createCompoundBorder(
     metrics.add(saveARFFMetricsBtn, gridBagConstraints);
 
     loadDatasetMetricsBtn.setText("Put to Preprocess");
+    loadDatasetMetricsBtn.setToolTipText("Put to Preprocess");
     loadDatasetMetricsBtn.addActionListener(new java.awt.event.ActionListener() {
         public void actionPerformed(java.awt.event.ActionEvent evt) {
             loadDatasetMetricsBtnActionPerformed(evt);
@@ -1560,6 +1578,7 @@ predictions.setBorder(BorderFactory.createCompoundBorder(
     metrics.add(r2MetricsCheckBox, gridBagConstraints);
 
     saveLatexMetricsBtn.setText("Save to Latex");
+    saveLatexMetricsBtn.setToolTipText("Save to Latex");
     saveLatexMetricsBtn.addActionListener(new java.awt.event.ActionListener() {
         public void actionPerformed(java.awt.event.ActionEvent evt) {
             saveLatexMetricsBtnActionPerformed(evt);
@@ -1658,6 +1677,7 @@ barChartPanelLayout.setHorizontalGroup(
     graph.add(xAxis2ComboBox, gridBagConstraints);
 
     savePDFGraphBtn.setText("Save to PDF");
+    savePDFGraphBtn.setToolTipText("Save to PDF");
     savePDFGraphBtn.setMaximumSize(new java.awt.Dimension(98, 23));
     savePDFGraphBtn.setMinimumSize(new java.awt.Dimension(98, 21));
     savePDFGraphBtn.setPreferredSize(new java.awt.Dimension(98, 23));
@@ -1674,6 +1694,7 @@ barChartPanelLayout.setHorizontalGroup(
     graph.add(savePDFGraphBtn, gridBagConstraints);
 
     savePNGGraphBtn.setText("Save to PNG");
+    savePNGGraphBtn.setToolTipText("Save to PNG");
     savePNGGraphBtn.setMaximumSize(new java.awt.Dimension(98, 23));
     savePNGGraphBtn.setMinimumSize(new java.awt.Dimension(98, 21));
     savePNGGraphBtn.setPreferredSize(new java.awt.Dimension(98, 23));
@@ -1690,6 +1711,7 @@ barChartPanelLayout.setHorizontalGroup(
     graph.add(savePNGGraphBtn, gridBagConstraints);
 
     updateGraphBtn.setText("Update");
+    updateGraphBtn.setToolTipText("Update");
     updateGraphBtn.setMaximumSize(new java.awt.Dimension(85, 23));
     updateGraphBtn.setMinimumSize(new java.awt.Dimension(85, 21));
     updateGraphBtn.addActionListener(new java.awt.event.ActionListener() {
@@ -1766,18 +1788,20 @@ metricStatisComboBox.addItemListener(new java.awt.event.ItemListener() {
     gridBagConstraints = new java.awt.GridBagConstraints();
     gridBagConstraints.gridx = 1;
     gridBagConstraints.gridy = 1;
+    gridBagConstraints.anchor = java.awt.GridBagConstraints.WEST;
     statisticalTestsPanel.add(numDatasetsStatisValue, gridBagConstraints);
 
     numSamStatisValue.setText("0");
     gridBagConstraints = new java.awt.GridBagConstraints();
     gridBagConstraints.gridx = 1;
     gridBagConstraints.gridy = 2;
+    gridBagConstraints.anchor = java.awt.GridBagConstraints.WEST;
     statisticalTestsPanel.add(numSamStatisValue, gridBagConstraints);
 
     filterStatisLabel.setText("Filter:");
     gridBagConstraints = new java.awt.GridBagConstraints();
     gridBagConstraints.gridx = 0;
-    gridBagConstraints.gridy = 6;
+    gridBagConstraints.gridy = 7;
     gridBagConstraints.anchor = java.awt.GridBagConstraints.EAST;
     statisticalTestsPanel.add(filterStatisLabel, gridBagConstraints);
 
@@ -1791,12 +1815,13 @@ metricStatisComboBox.addItemListener(new java.awt.event.ItemListener() {
     });
     gridBagConstraints = new java.awt.GridBagConstraints();
     gridBagConstraints.gridx = 1;
-    gridBagConstraints.gridy = 6;
+    gridBagConstraints.gridy = 7;
     gridBagConstraints.gridwidth = 2;
     gridBagConstraints.fill = java.awt.GridBagConstraints.HORIZONTAL;
     statisticalTestsPanel.add(filterStatisComboBox, gridBagConstraints);
 
     saveCSVStatisBtn.setText("Save to CSV");
+    saveCSVStatisBtn.setToolTipText("Save to CSV");
     saveCSVStatisBtn.addActionListener(new java.awt.event.ActionListener() {
         public void actionPerformed(java.awt.event.ActionEvent evt) {
             saveCSVStatisBtnActionPerformed(evt);
@@ -1804,10 +1829,11 @@ metricStatisComboBox.addItemListener(new java.awt.event.ItemListener() {
     });
     gridBagConstraints = new java.awt.GridBagConstraints();
     gridBagConstraints.gridx = 3;
-    gridBagConstraints.gridy = 6;
+    gridBagConstraints.gridy = 7;
     statisticalTestsPanel.add(saveCSVStatisBtn, gridBagConstraints);
 
     putPreprocessStatisBtn.setText("Put to Preprocess");
+    putPreprocessStatisBtn.setToolTipText("Put to Preprocess");
     putPreprocessStatisBtn.addActionListener(new java.awt.event.ActionListener() {
         public void actionPerformed(java.awt.event.ActionEvent evt) {
             putPreprocessStatisBtnActionPerformed(evt);
@@ -1815,7 +1841,7 @@ metricStatisComboBox.addItemListener(new java.awt.event.ItemListener() {
     });
     gridBagConstraints = new java.awt.GridBagConstraints();
     gridBagConstraints.gridx = 4;
-    gridBagConstraints.gridy = 6;
+    gridBagConstraints.gridy = 7;
     gridBagConstraints.anchor = java.awt.GridBagConstraints.WEST;
     statisticalTestsPanel.add(putPreprocessStatisBtn, gridBagConstraints);
 
@@ -1828,7 +1854,7 @@ metricStatisComboBox.addItemListener(new java.awt.event.ItemListener() {
         }
     ) {
         Class[] types = new Class [] {
-            java.lang.String.class, java.lang.String.class, java.lang.String.class, java.lang.String.class, java.lang.String.class, java.lang.String.class, java.lang.String.class, java.lang.String.class, java.lang.String.class, java.lang.String.class
+            java.lang.String.class, java.lang.String.class, java.lang.String.class, java.lang.String.class, java.lang.String.class, java.lang.String.class, java.lang.Double.class, java.lang.Double.class, java.lang.Double.class, java.lang.String.class
         };
         boolean[] canEdit = new boolean [] {
             false, false, false, false, false, false, false, false, false, false
@@ -1847,7 +1873,7 @@ metricStatisComboBox.addItemListener(new java.awt.event.ItemListener() {
 
     gridBagConstraints = new java.awt.GridBagConstraints();
     gridBagConstraints.gridx = 0;
-    gridBagConstraints.gridy = 5;
+    gridBagConstraints.gridy = 6;
     gridBagConstraints.gridwidth = 5;
     gridBagConstraints.fill = java.awt.GridBagConstraints.BOTH;
     gridBagConstraints.weightx = 1.0;
@@ -1855,16 +1881,44 @@ metricStatisComboBox.addItemListener(new java.awt.event.ItemListener() {
     statisticalTestsPanel.add(statisticalTestScrollPane, gridBagConstraints);
     gridBagConstraints = new java.awt.GridBagConstraints();
     gridBagConstraints.gridx = 0;
-    gridBagConstraints.gridy = 4;
+    gridBagConstraints.gridy = 5;
     gridBagConstraints.gridwidth = 3;
     gridBagConstraints.anchor = java.awt.GridBagConstraints.WEST;
     statisticalTestsPanel.add(messageNormTestLabel, gridBagConstraints);
 
     valueGroupsLOOTextField.setText("30");
+    valueGroupsLOOTextField.addActionListener(new java.awt.event.ActionListener() {
+        public void actionPerformed(java.awt.event.ActionEvent evt) {
+            valueGroupsLOOTextFieldActionPerformed(evt);
+        }
+    });
     gridBagConstraints = new java.awt.GridBagConstraints();
     gridBagConstraints.gridx = 1;
     gridBagConstraints.gridy = 3;
     statisticalTestsPanel.add(valueGroupsLOOTextField, gridBagConstraints);
+
+    ropeLabel.setText("Rope:");
+    gridBagConstraints = new java.awt.GridBagConstraints();
+    gridBagConstraints.gridx = 0;
+    gridBagConstraints.gridy = 4;
+    gridBagConstraints.anchor = java.awt.GridBagConstraints.WEST;
+    statisticalTestsPanel.add(ropeLabel, gridBagConstraints);
+
+    ropeTextField.setText("1");
+    ropeTextField.addActionListener(new java.awt.event.ActionListener() {
+        public void actionPerformed(java.awt.event.ActionEvent evt) {
+            ropeTextFieldActionPerformed(evt);
+        }
+    });
+    gridBagConstraints = new java.awt.GridBagConstraints();
+    gridBagConstraints.gridx = 1;
+    gridBagConstraints.gridy = 4;
+    statisticalTestsPanel.add(ropeTextField, gridBagConstraints);
+    gridBagConstraints = new java.awt.GridBagConstraints();
+    gridBagConstraints.gridx = 3;
+    gridBagConstraints.gridy = 0;
+    gridBagConstraints.gridwidth = 2;
+    statisticalTestsPanel.add(messagesStatis, gridBagConstraints);
 
     statisticalTestsPanel.setBorder(BorderFactory.createCompoundBorder(
         BorderFactory.createTitledBorder("Statistical tests"),
@@ -1893,7 +1947,7 @@ attrSelExpTabs.addTab("Results", results);
 
             datasetsTableModel.addRow(new Object[]{m_Instances.relationName(), m_Instances.numInstances(), 
                 m_Instances.numAttributes() - 1, m_Instances.numClasses(), m_Instances.attribute(m_Instances.numAttributes() - 1).name(), 
-                m_Instances.attribute(m_Instances.classIndex()).value(0)});
+                m_Instances.attribute(m_Instances.classIndex()).value(0), listInstances.size()});
 
             listInstances.add(m_Instances);
             listClassPositive.add(0);
@@ -1908,13 +1962,29 @@ attrSelExpTabs.addTab("Results", results);
     private void removeBtnDatasetActionPerformed(java.awt.event.ActionEvent evt) {//GEN-FIRST:event_removeBtnDatasetActionPerformed
         m_Log.statusMessage("OK");
         
-        if(datasetsTable.getSelectedRow() != -1){
-            listInstances.remove(datasetsTable.getSelectedRow());
-            listClassPositive.remove(datasetsTable.getSelectedRow());
-            datasetsTableModel.removeRow(datasetsTable.getSelectedRow());
+        if(datasetsTable.getSelectedRows().length != 0){
+            List<Integer> indexRows = new ArrayList<>();
             
-            checkRun();
-        }else{
+            for(int i = datasetsTable.getSelectedRows().length-1; i >= 0; i--){
+                indexRows.add((int)datasetsTable.getValueAt(datasetsTable.getSelectedRows()[i], 6));
+                datasetsTableModel.removeRow(datasetsTable.convertRowIndexToModel(datasetsTable.getSelectedRows()[i]));
+            }
+            
+            Collections.sort(indexRows);  
+            
+            for(int i = indexRows.size()-1; i >= 0; i--){
+                listInstances.remove((int)indexRows.get(i));
+                listClassPositive.remove((int)indexRows.get(i));
+            }
+            
+            for(int j = 0; j < listInstances.size(); j++){
+                for(int z = 0; z < datasetsTable.getRowCount(); z++){
+                    if(datasetsTable.getValueAt(z, 0).equals(listInstances.get(j).relationName())){
+                        datasetsTable.setValueAt(j, z, 6);
+                    }
+                }
+            }
+        } else {
             m_Log.logMessage("No row is selected");
             m_Log.statusMessage("See error log");
         }
@@ -2959,6 +3029,10 @@ attrSelExpTabs.addTab("Results", results);
 
     private void metricStatisComboBoxItemStateChanged(java.awt.event.ItemEvent evt) {//GEN-FIRST:event_metricStatisComboBoxItemStateChanged
         if(evt.getStateChange() == ItemEvent.SELECTED) {
+            m_Log.logMessage("Perfoming statistical tests. Please wait...");
+            m_Log.statusMessage("Perfoming statistical tests. Please wait...");
+            messagesStatis.setText("Perfoming statistical tests. Please wait...");
+            
             if(leaveOneOutBtn.isSelected()){
                 try {
                     switch ((String)metricStatisComboBox.getSelectedItem()) {
@@ -3063,6 +3137,131 @@ attrSelExpTabs.addTab("Results", results);
         getExplorer().getPreprocessPanel().setInstances(inst);
     }//GEN-LAST:event_putPreprocessStatisBtnActionPerformed
 
+    private void valueGroupsLOOTextFieldActionPerformed(java.awt.event.ActionEvent evt) {//GEN-FIRST:event_valueGroupsLOOTextFieldActionPerformed
+        m_Log.logMessage("Perfoming statistical tests. Please wait...");
+        m_Log.statusMessage("Perfoming statistical tests. Please wait...");
+        messagesStatis.setText("Perfoming statistical tests. Please wait...");
+        
+        if(statisticalTestTableModel.getRowCount() > 0){
+            statisticalTestTableModel.setRowCount(0);
+        }
+        
+        JOptionPane.showMessageDialog(null, "Perfoming statistical tests. Please wait...");
+        
+        if(leaveOneOutBtn.isSelected()){
+            try {
+                switch ((String)metricStatisComboBox.getSelectedItem()) {
+                    case "F-measure":
+                        bayesianComparator(fMeasureGroupsLOO(Integer.parseInt(valueGroupsLOOTextField.getText())));
+                        break;
+                    case "Precision":
+                        bayesianComparator(precisionGroupsLOO(Integer.parseInt(valueGroupsLOOTextField.getText())));
+                        break;
+                    case "Recall":
+                        bayesianComparator(recallGroupsLOO(Integer.parseInt(valueGroupsLOOTextField.getText())));
+                        break;
+                    case "MAE":
+                        bayesianComparator(maeGroupsLOO(Integer.parseInt(valueGroupsLOOTextField.getText())));
+                        break;
+                    case "RMSE":
+                        bayesianComparator(rmseGroupsLOO(Integer.parseInt(valueGroupsLOOTextField.getText())));
+                        break;
+                    default:
+                        break;
+                }
+            } catch (InterruptedException | ExecutionException ex) {
+                Logger.getLogger(AttrSelExp.class.getName()).log(Level.SEVERE, null, ex);
+            } catch (Exception ex) {
+                Logger.getLogger(AttrSelExp.class.getName()).log(Level.SEVERE, null, ex);
+            }
+        }
+    }//GEN-LAST:event_valueGroupsLOOTextFieldActionPerformed
+
+    private void ropeTextFieldActionPerformed(java.awt.event.ActionEvent evt) {//GEN-FIRST:event_ropeTextFieldActionPerformed
+        m_Log.logMessage("Perfoming statistical tests. Please wait...");
+        m_Log.statusMessage("Perfoming statistical tests. Please wait...");
+        messagesStatis.setText("Perfoming statistical tests. Please wait...");
+        
+        if(statisticalTestTableModel.getRowCount() > 0){
+            statisticalTestTableModel.setRowCount(0);
+        }
+        
+        JOptionPane.showMessageDialog(null, "Perfoming statistical tests. Please wait...");
+        
+        if(leaveOneOutBtn.isSelected()){
+            try {
+                switch ((String)metricStatisComboBox.getSelectedItem()) {
+                    case "F-measure":
+                        bayesianComparator(fMeasureGroupsLOO(Integer.parseInt(valueGroupsLOOTextField.getText())));
+                        break;
+                    case "Precision":
+                        bayesianComparator(precisionGroupsLOO(Integer.parseInt(valueGroupsLOOTextField.getText())));
+                        break;
+                    case "Recall":
+                        bayesianComparator(recallGroupsLOO(Integer.parseInt(valueGroupsLOOTextField.getText())));
+                        break;
+                    case "MAE":
+                        bayesianComparator(maeGroupsLOO(Integer.parseInt(valueGroupsLOOTextField.getText())));
+                        break;
+                    case "RMSE":
+                        bayesianComparator(rmseGroupsLOO(Integer.parseInt(valueGroupsLOOTextField.getText())));
+                        break;
+                    default:
+                        break;
+                }
+            } catch (InterruptedException | ExecutionException ex) {
+                Logger.getLogger(AttrSelExp.class.getName()).log(Level.SEVERE, null, ex);
+            } catch (Exception ex) {
+                Logger.getLogger(AttrSelExp.class.getName()).log(Level.SEVERE, null, ex);
+            }
+        }else {
+            try {
+                switch ((String)metricStatisComboBox.getSelectedItem()) {
+                    case "F-measure":
+                        bayesianComparator(fMeasureStatis());
+                        break;
+                    case "Accuracy":
+                        bayesianComparator(accuracyStatis());
+                        break;
+                    case "Precision":
+                        bayesianComparator(precisionStatis());
+                        break;
+                    case "Recall":
+                        bayesianComparator(recallStatis());
+                        break;
+                    case "Kappa":
+                        bayesianComparator(kappaStatis());
+                        break;
+                    case "MCC":
+                        bayesianComparator(mccStatis());
+                        break;
+                    case "AUC":
+                        bayesianComparator(aucStatis());
+                        break;
+                    case "MAE":
+                        bayesianComparator(maeStatis());
+                        break;
+                    case "MSE":
+                        bayesianComparator(mseStatis());
+                        break;
+                    case "RMSE":
+                        bayesianComparator(rmseStatis());
+                        break;
+                    case "MAPE":
+                        bayesianComparator(mapeStatis());
+                        break;
+                    case "R2":
+                        bayesianComparator(r2Statis());
+                        break;
+                    default:
+                        break;
+                }
+            } catch (InterruptedException | ExecutionException ex) {
+                Logger.getLogger(AttrSelExp.class.getName()).log(Level.SEVERE, null, ex);
+            }
+        }
+    }//GEN-LAST:event_ropeTextFieldActionPerformed
+
     private void bayesianComparator(List metrics){
         try {
             String contentFile = convertListMetricsToString(metrics);
@@ -3096,10 +3295,10 @@ attrSelExpTabs.addTab("Results", results);
             String[] bayComp;
             
             if(fileSeparator.equals("\\")){
-                bayComp = new String[]{"python", dir + "\\wekafiles\\packages\\FS-Studio\\bayesianComparator.py", tmpdir};
-                //bayComp = new String[]{"python", "bayesianComparator.py", tmpdir};
+                bayComp = new String[]{"python", dir + "\\wekafiles\\packages\\FS-Studio\\bayesianComparator.py", tmpdir, ropeTextField.getText()};
+                //bayComp = new String[]{"python", "bayesianComparator.py", tmpdir, ropeTextField.getText()};
             }else{
-                bayComp = new String[]{"python", dir + "/wekafiles/packages/FS-Studio/bayesianComparator.py", tmpdir};
+                bayComp = new String[]{"python", dir + "/wekafiles/packages/FS-Studio/bayesianComparator.py", tmpdir, ropeTextField.getText()};
             }
               
             Process proc = Runtime.getRuntime().exec(bayComp);
@@ -3173,16 +3372,22 @@ attrSelExpTabs.addTab("Results", results);
                 Collections.sort(max);
 
                 if(max.get(max.size()-1).equals(Double.parseDouble(auxMetric[0]))){
-                    statisticalTestTableModel.addRow(new Object[]{aux1[0], aux1[1], aux1[2], aux2[0], aux2[1], aux2[2], auxMetric[0], auxMetric[1], auxMetric[2], "1"});
+                    statisticalTestTableModel.addRow(new Object[]{aux1[0], aux1[1], aux1[2], aux2[0], aux2[1], aux2[2], Double.parseDouble(auxMetric[0]), Double.parseDouble(auxMetric[1]), 
+                        Double.parseDouble(auxMetric[2]), "1"});
                 }else if(max.get(max.size()-1).equals(Double.parseDouble(auxMetric[1]))){
-                    statisticalTestTableModel.addRow(new Object[]{aux1[0], aux1[1], aux1[2], aux2[0], aux2[1], aux2[2], auxMetric[0], auxMetric[1], auxMetric[2], "0"});
+                    statisticalTestTableModel.addRow(new Object[]{aux1[0], aux1[1], aux1[2], aux2[0], aux2[1], aux2[2], Double.parseDouble(auxMetric[0]), Double.parseDouble(auxMetric[1]), 
+                        Double.parseDouble(auxMetric[2]), "0"});
                 }else{
-                    statisticalTestTableModel.addRow(new Object[]{aux1[0], aux1[1], aux1[2], aux2[0], aux2[1], aux2[2], auxMetric[0], auxMetric[1], auxMetric[2], "2"});
+                    statisticalTestTableModel.addRow(new Object[]{aux1[0], aux1[1], aux1[2], aux2[0], aux2[1], aux2[2], Double.parseDouble(auxMetric[0]), Double.parseDouble(auxMetric[1]), 
+                        Double.parseDouble(auxMetric[2]), "2"});
                 }
-                
             }
+            
+            m_Log.statusMessage("Statistical tests results already produced.");
+            m_Log.logMessage("Statistical tests results already produced.");
+            messagesStatis.setText("Statistical tests results already produced.");
         } catch (IOException | InterruptedException ex) {  
-            Logger.getLogger(AttrSelExp.class.getName()).log(Level.SEVERE, null, ex);
+            m_Log.statusMessage("Statistical tests could not be calculated, missing python, or numpy or baycomp packages.");
         }
     }
     
@@ -4730,7 +4935,7 @@ attrSelExpTabs.addTab("Results", results);
 
         datasetsTableModel.addRow(new Object[]{dataset.relationName(), dataset.numInstances(), 
             dataset.numAttributes() - 1, dataset.numClasses(), dataset.attribute(dataset.numAttributes() - 1).name(), 
-            dataset.attribute(dataset.classIndex()).value(positiveClass)});
+            dataset.attribute(dataset.classIndex()).value(positiveClass), listInstances.size()});
 
         listInstances.add(dataset);
         listClassPositive.add(positiveClass);
@@ -5822,6 +6027,7 @@ attrSelExpTabs.addTab("Results", results);
     
     private Instances createObjectInstances(DefaultTableModel tableModel, String name){
         ArrayList<Attribute> listAttributes = new ArrayList<>();
+        int nominalColumns = 0;
         
         for(int i = 0; i < tableModel.getColumnCount(); i++){
             Attribute a = null;
@@ -5829,10 +6035,12 @@ attrSelExpTabs.addTab("Results", results);
             if(tableModel.getColumnName(i).equals("Actual") || tableModel.getColumnName(i).equals("Predicted") || tableModel.getColumnName(i).equals("Accuracy") || tableModel.getColumnName(i).equals("NumAttributes") || 
                 tableModel.getColumnName(i).equals("Precision") || tableModel.getColumnName(i).equals("Recall") || tableModel.getColumnName(i).equals("F-measure") || tableModel.getColumnName(i).equals("Kappa") ||
                 tableModel.getColumnName(i).equals("MCC") || tableModel.getColumnName(i).equals("AUC") || tableModel.getColumnName(i).equals("MAE") || tableModel.getColumnName(i).equals("MSE") || tableModel.getColumnName(i).equals("RMSE") ||
-                tableModel.getColumnName(i).equals("MAPE") || tableModel.getColumnName(i).equals("R2")){
+                tableModel.getColumnName(i).equals("MAPE") || tableModel.getColumnName(i).equals("R2") || tableModel.getColumnName(i).equals("p(left)") || tableModel.getColumnName(i).equals("p(right)")
+                || tableModel.getColumnName(i).equals("p(no)")){
                 a = new Attribute(tableModel.getColumnName(i));
             }else{
                 a = new Attribute(tableModel.getColumnName(i), (ArrayList<String>) null);
+                nominalColumns++;
             }
 
             listAttributes.add(a);
@@ -5865,6 +6073,27 @@ attrSelExpTabs.addTab("Results", results);
             
             Instance row = new DenseInstance(1.0, values);
             tableInst.add(row);
+        }
+        
+        try {
+            StringToNominal f = new StringToNominal();
+            
+            f.setInputFormat(tableInst);
+            
+            String[] o = new String[]{"-R", ""};
+            
+            for(int r = 0; r < nominalColumns; r++){
+                if(r == 0){
+                    o[1] = o[1] + (r+1);
+                }else{
+                    o[1] = o[1] + "," +(r+1);
+                }
+            }
+            
+            f.setOptions(o);
+            tableInst = Filter.useFilter(tableInst, f);
+        } catch (Exception ex) {
+            m_Log.statusMessage("Error");
         }
         
         return tableInst;
@@ -6538,6 +6767,8 @@ attrSelExpTabs.addTab("Results", results);
         captionEV.clear();
         captionSE.clear();
         captionCL.clear();
+        statisticalTestTableModel.setRowCount(0);
+        ropeTextField.setText("1");
         
         //Jpanel metrics
         metricsTableModel.setRowCount(0);
@@ -7053,6 +7284,7 @@ attrSelExpTabs.addTab("Results", results);
     private javax.swing.JCheckBox mapeMetricsCheckBox;
     private javax.swing.JCheckBox mccMetricsCheckBox;
     private javax.swing.JLabel messageNormTestLabel;
+    private javax.swing.JLabel messagesStatis;
     private javax.swing.JComboBox<String> metricGraphComboBox;
     private javax.swing.JLabel metricGraphLabel;
     private javax.swing.JComboBox<String> metricStatisComboBox;
@@ -7086,6 +7318,8 @@ attrSelExpTabs.addTab("Results", results);
     private javax.swing.JButton removeBtnFeature;
     private javax.swing.JPanel results;
     private javax.swing.JCheckBox rmseMetricsCheckBox;
+    private javax.swing.JLabel ropeLabel;
+    private javax.swing.JTextField ropeTextField;
     private javax.swing.JButton runExpBtn;
     private javax.swing.JPanel runPanel;
     private javax.swing.JButton saveARFFMetricsBtn;

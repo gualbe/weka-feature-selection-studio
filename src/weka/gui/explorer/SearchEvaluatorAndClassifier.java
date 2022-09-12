@@ -34,7 +34,7 @@ public class SearchEvaluatorAndClassifier implements Callable<ResultsAttrSelExp>
     private ASSearch search;
     private Classifier classifier;
     private final JProgressBar progressBar;
-    private static int percentThreads = 0;
+    private static int percentThreads;
     private Instances train;
     private Instances test;
     private final int fold;
@@ -74,6 +74,7 @@ public class SearchEvaluatorAndClassifier implements Callable<ResultsAttrSelExp>
         this.progressBar = progressBar;
         this.fold = fold;
         this.numTareas = numTareas;
+        percentThreads = 0;
     }
     
     public ResultsAttrSelExp run() {
