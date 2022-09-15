@@ -3138,42 +3138,52 @@ attrSelExpTabs.addTab("Results", results);
     }//GEN-LAST:event_putPreprocessStatisBtnActionPerformed
 
     private void valueGroupsLOOTextFieldActionPerformed(java.awt.event.ActionEvent evt) {//GEN-FIRST:event_valueGroupsLOOTextFieldActionPerformed
-        m_Log.logMessage("Perfoming statistical tests. Please wait...");
-        m_Log.statusMessage("Perfoming statistical tests. Please wait...");
-        messagesStatis.setText("Perfoming statistical tests. Please wait...");
-        
-        if(statisticalTestTableModel.getRowCount() > 0){
-            statisticalTestTableModel.setRowCount(0);
-        }
-        
-        JOptionPane.showMessageDialog(null, "Perfoming statistical tests. Please wait...");
-        
         if(leaveOneOutBtn.isSelected()){
-            try {
-                switch ((String)metricStatisComboBox.getSelectedItem()) {
-                    case "F-measure":
-                        bayesianComparator(fMeasureGroupsLOO(Integer.parseInt(valueGroupsLOOTextField.getText())));
-                        break;
-                    case "Precision":
-                        bayesianComparator(precisionGroupsLOO(Integer.parseInt(valueGroupsLOOTextField.getText())));
-                        break;
-                    case "Recall":
-                        bayesianComparator(recallGroupsLOO(Integer.parseInt(valueGroupsLOOTextField.getText())));
-                        break;
-                    case "MAE":
-                        bayesianComparator(maeGroupsLOO(Integer.parseInt(valueGroupsLOOTextField.getText())));
-                        break;
-                    case "RMSE":
-                        bayesianComparator(rmseGroupsLOO(Integer.parseInt(valueGroupsLOOTextField.getText())));
-                        break;
-                    default:
-                        break;
-                }
-            } catch (InterruptedException | ExecutionException ex) {
-                Logger.getLogger(AttrSelExp.class.getName()).log(Level.SEVERE, null, ex);
-            } catch (Exception ex) {
-                Logger.getLogger(AttrSelExp.class.getName()).log(Level.SEVERE, null, ex);
+            m_Log.logMessage("Perfoming statistical tests. Please wait...");
+            m_Log.statusMessage("Perfoming statistical tests. Please wait...");
+            messagesStatis.setText("Perfoming statistical tests. Please wait...");
+        
+            if(statisticalTestTableModel.getRowCount() > 0){
+                statisticalTestTableModel.setRowCount(0);
             }
+            
+            //to avoid interface blocking
+            worker = new SwingWorker(){
+                @Override
+                protected Object doInBackground() throws Exception {
+                    try {
+                        switch ((String)metricStatisComboBox.getSelectedItem()) {
+                            case "F-measure":
+                                bayesianComparator(fMeasureGroupsLOO(Integer.parseInt(valueGroupsLOOTextField.getText())));
+                                break;
+                            case "Precision":
+                                bayesianComparator(precisionGroupsLOO(Integer.parseInt(valueGroupsLOOTextField.getText())));
+                                break;
+                            case "Recall":
+                                bayesianComparator(recallGroupsLOO(Integer.parseInt(valueGroupsLOOTextField.getText())));
+                                break;
+                            case "MAE":
+                                bayesianComparator(maeGroupsLOO(Integer.parseInt(valueGroupsLOOTextField.getText())));
+                                break;
+                            case "RMSE":
+                                bayesianComparator(rmseGroupsLOO(Integer.parseInt(valueGroupsLOOTextField.getText())));
+                                break;
+                            default:
+                                break;
+                        }
+                    } catch (InterruptedException | ExecutionException ex) {
+                        Logger.getLogger(AttrSelExp.class.getName()).log(Level.SEVERE, null, ex);
+                    } catch (Exception ex) {
+                        Logger.getLogger(AttrSelExp.class.getName()).log(Level.SEVERE, null, ex);
+                    }
+                    
+                    return null;
+                }	
+            };
+
+            worker.execute();
+        }else{
+            JOptionPane.showMessageDialog(null, "Validation LOO has not been selected.");
         }
     }//GEN-LAST:event_valueGroupsLOOTextFieldActionPerformed
 
@@ -3186,80 +3196,88 @@ attrSelExpTabs.addTab("Results", results);
             statisticalTestTableModel.setRowCount(0);
         }
         
-        JOptionPane.showMessageDialog(null, "Perfoming statistical tests. Please wait...");
+        //to avoid interface blocking
+        worker = new SwingWorker(){
+            @Override
+            protected Object doInBackground() throws Exception {
+                if(leaveOneOutBtn.isSelected()){
+                    try {
+                        switch ((String)metricStatisComboBox.getSelectedItem()) {
+                            case "F-measure":
+                                bayesianComparator(fMeasureGroupsLOO(Integer.parseInt(valueGroupsLOOTextField.getText())));
+                                break;
+                            case "Precision":
+                                bayesianComparator(precisionGroupsLOO(Integer.parseInt(valueGroupsLOOTextField.getText())));
+                                break;
+                            case "Recall":
+                                bayesianComparator(recallGroupsLOO(Integer.parseInt(valueGroupsLOOTextField.getText())));
+                                break;
+                            case "MAE":
+                                bayesianComparator(maeGroupsLOO(Integer.parseInt(valueGroupsLOOTextField.getText())));
+                                break;
+                            case "RMSE":
+                                bayesianComparator(rmseGroupsLOO(Integer.parseInt(valueGroupsLOOTextField.getText())));
+                                break;
+                            default:
+                                break;
+                        }
+                    } catch (InterruptedException | ExecutionException ex) {
+                        Logger.getLogger(AttrSelExp.class.getName()).log(Level.SEVERE, null, ex);
+                    } catch (Exception ex) {
+                        Logger.getLogger(AttrSelExp.class.getName()).log(Level.SEVERE, null, ex);
+                    }
+                }else {
+                    try {
+                        switch ((String)metricStatisComboBox.getSelectedItem()) {
+                            case "F-measure":
+                                bayesianComparator(fMeasureStatis());
+                                break;
+                            case "Accuracy":
+                                bayesianComparator(accuracyStatis());
+                                break;
+                            case "Precision":
+                                bayesianComparator(precisionStatis());
+                                break;
+                            case "Recall":
+                                bayesianComparator(recallStatis());
+                                break;
+                            case "Kappa":
+                                bayesianComparator(kappaStatis());
+                                break;
+                            case "MCC":
+                                bayesianComparator(mccStatis());
+                                break;
+                            case "AUC":
+                                bayesianComparator(aucStatis());
+                                break;
+                            case "MAE":
+                                bayesianComparator(maeStatis());
+                                break;
+                            case "MSE":
+                                bayesianComparator(mseStatis());
+                                break;
+                            case "RMSE":
+                                bayesianComparator(rmseStatis());
+                                break;
+                            case "MAPE":
+                                bayesianComparator(mapeStatis());
+                                break;
+                            case "R2":
+                                bayesianComparator(r2Statis());
+                                break;
+                            default:
+                                break;
+                        }
+                    } catch (InterruptedException | ExecutionException ex) {
+                        Logger.getLogger(AttrSelExp.class.getName()).log(Level.SEVERE, null, ex);
+                    }
+                }
+                
+                return null;
+            }	
+        };
         
-        if(leaveOneOutBtn.isSelected()){
-            try {
-                switch ((String)metricStatisComboBox.getSelectedItem()) {
-                    case "F-measure":
-                        bayesianComparator(fMeasureGroupsLOO(Integer.parseInt(valueGroupsLOOTextField.getText())));
-                        break;
-                    case "Precision":
-                        bayesianComparator(precisionGroupsLOO(Integer.parseInt(valueGroupsLOOTextField.getText())));
-                        break;
-                    case "Recall":
-                        bayesianComparator(recallGroupsLOO(Integer.parseInt(valueGroupsLOOTextField.getText())));
-                        break;
-                    case "MAE":
-                        bayesianComparator(maeGroupsLOO(Integer.parseInt(valueGroupsLOOTextField.getText())));
-                        break;
-                    case "RMSE":
-                        bayesianComparator(rmseGroupsLOO(Integer.parseInt(valueGroupsLOOTextField.getText())));
-                        break;
-                    default:
-                        break;
-                }
-            } catch (InterruptedException | ExecutionException ex) {
-                Logger.getLogger(AttrSelExp.class.getName()).log(Level.SEVERE, null, ex);
-            } catch (Exception ex) {
-                Logger.getLogger(AttrSelExp.class.getName()).log(Level.SEVERE, null, ex);
-            }
-        }else {
-            try {
-                switch ((String)metricStatisComboBox.getSelectedItem()) {
-                    case "F-measure":
-                        bayesianComparator(fMeasureStatis());
-                        break;
-                    case "Accuracy":
-                        bayesianComparator(accuracyStatis());
-                        break;
-                    case "Precision":
-                        bayesianComparator(precisionStatis());
-                        break;
-                    case "Recall":
-                        bayesianComparator(recallStatis());
-                        break;
-                    case "Kappa":
-                        bayesianComparator(kappaStatis());
-                        break;
-                    case "MCC":
-                        bayesianComparator(mccStatis());
-                        break;
-                    case "AUC":
-                        bayesianComparator(aucStatis());
-                        break;
-                    case "MAE":
-                        bayesianComparator(maeStatis());
-                        break;
-                    case "MSE":
-                        bayesianComparator(mseStatis());
-                        break;
-                    case "RMSE":
-                        bayesianComparator(rmseStatis());
-                        break;
-                    case "MAPE":
-                        bayesianComparator(mapeStatis());
-                        break;
-                    case "R2":
-                        bayesianComparator(r2Statis());
-                        break;
-                    default:
-                        break;
-                }
-            } catch (InterruptedException | ExecutionException ex) {
-                Logger.getLogger(AttrSelExp.class.getName()).log(Level.SEVERE, null, ex);
-            }
-        }
+        worker.execute();
     }//GEN-LAST:event_ropeTextFieldActionPerformed
 
     private void bayesianComparator(List metrics){
