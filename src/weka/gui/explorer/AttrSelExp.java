@@ -412,6 +412,10 @@ public class AttrSelExp extends javax.swing.JPanel implements Explorer.ExplorerP
         savePDFGraphBtn = new javax.swing.JButton();
         savePNGGraphBtn = new javax.swing.JButton();
         updateGraphBtn = new javax.swing.JButton();
+        labelFilter1 = new javax.swing.JLabel();
+        labelFilter2 = new javax.swing.JLabel();
+        filterGraph1ComboBox = new javax.swing.JComboBox<>();
+        filterGraph2ComboBox = new javax.swing.JComboBox<>();
         statisticalTestsPanel = new javax.swing.JPanel();
         metricStatisLabel = new javax.swing.JLabel();
         numDatasetsStatisLabel = new javax.swing.JLabel();
@@ -1622,7 +1626,7 @@ barChartPanelLayout.setHorizontalGroup(
     gridBagConstraints = new java.awt.GridBagConstraints();
     gridBagConstraints.gridx = 0;
     gridBagConstraints.gridy = 0;
-    gridBagConstraints.gridheight = 6;
+    gridBagConstraints.gridheight = 8;
     gridBagConstraints.fill = java.awt.GridBagConstraints.BOTH;
     gridBagConstraints.weightx = 1.0;
     gridBagConstraints.weighty = 1.0;
@@ -1654,6 +1658,11 @@ barChartPanelLayout.setHorizontalGroup(
     xAxis1ComboBox.setMaximumSize(new java.awt.Dimension(98, 20));
     xAxis1ComboBox.setMinimumSize(new java.awt.Dimension(98, 19));
     xAxis1ComboBox.setPreferredSize(new java.awt.Dimension(98, 20));
+    xAxis1ComboBox.addItemListener(new java.awt.event.ItemListener() {
+        public void itemStateChanged(java.awt.event.ItemEvent evt) {
+            xAxis1ComboBoxItemStateChanged(evt);
+        }
+    });
     gridBagConstraints = new java.awt.GridBagConstraints();
     gridBagConstraints.gridx = 2;
     gridBagConstraints.gridy = 1;
@@ -1670,6 +1679,11 @@ barChartPanelLayout.setHorizontalGroup(
     xAxis2ComboBox.setMaximumSize(new java.awt.Dimension(98, 20));
     xAxis2ComboBox.setMinimumSize(new java.awt.Dimension(98, 19));
     xAxis2ComboBox.setPreferredSize(new java.awt.Dimension(98, 20));
+    xAxis2ComboBox.addItemListener(new java.awt.event.ItemListener() {
+        public void itemStateChanged(java.awt.event.ItemEvent evt) {
+            xAxis2ComboBoxItemStateChanged(evt);
+        }
+    });
     gridBagConstraints = new java.awt.GridBagConstraints();
     gridBagConstraints.gridx = 2;
     gridBagConstraints.gridy = 2;
@@ -1688,7 +1702,7 @@ barChartPanelLayout.setHorizontalGroup(
     });
     gridBagConstraints = new java.awt.GridBagConstraints();
     gridBagConstraints.gridx = 1;
-    gridBagConstraints.gridy = 4;
+    gridBagConstraints.gridy = 6;
     gridBagConstraints.gridwidth = 2;
     gridBagConstraints.anchor = java.awt.GridBagConstraints.NORTH;
     graph.add(savePDFGraphBtn, gridBagConstraints);
@@ -1705,7 +1719,7 @@ barChartPanelLayout.setHorizontalGroup(
     });
     gridBagConstraints = new java.awt.GridBagConstraints();
     gridBagConstraints.gridx = 1;
-    gridBagConstraints.gridy = 3;
+    gridBagConstraints.gridy = 5;
     gridBagConstraints.gridwidth = 2;
     gridBagConstraints.anchor = java.awt.GridBagConstraints.NORTH;
     graph.add(savePNGGraphBtn, gridBagConstraints);
@@ -1721,11 +1735,37 @@ barChartPanelLayout.setHorizontalGroup(
     });
     gridBagConstraints = new java.awt.GridBagConstraints();
     gridBagConstraints.gridx = 1;
-    gridBagConstraints.gridy = 5;
+    gridBagConstraints.gridy = 7;
     gridBagConstraints.gridwidth = 2;
     gridBagConstraints.anchor = java.awt.GridBagConstraints.NORTH;
     gridBagConstraints.weighty = 1.0;
     graph.add(updateGraphBtn, gridBagConstraints);
+
+    labelFilter1.setText("Filter (1):");
+    gridBagConstraints = new java.awt.GridBagConstraints();
+    gridBagConstraints.gridx = 1;
+    gridBagConstraints.gridy = 3;
+    gridBagConstraints.anchor = java.awt.GridBagConstraints.EAST;
+    graph.add(labelFilter1, gridBagConstraints);
+
+    labelFilter2.setText("Filter (2):");
+    gridBagConstraints = new java.awt.GridBagConstraints();
+    gridBagConstraints.gridx = 1;
+    gridBagConstraints.gridy = 4;
+    gridBagConstraints.anchor = java.awt.GridBagConstraints.EAST;
+    graph.add(labelFilter2, gridBagConstraints);
+
+    gridBagConstraints = new java.awt.GridBagConstraints();
+    gridBagConstraints.gridx = 2;
+    gridBagConstraints.gridy = 3;
+    gridBagConstraints.fill = java.awt.GridBagConstraints.HORIZONTAL;
+    graph.add(filterGraph1ComboBox, gridBagConstraints);
+
+    gridBagConstraints = new java.awt.GridBagConstraints();
+    gridBagConstraints.gridx = 2;
+    gridBagConstraints.gridy = 4;
+    gridBagConstraints.fill = java.awt.GridBagConstraints.HORIZONTAL;
+    graph.add(filterGraph2ComboBox, gridBagConstraints);
 
     graph.setBorder(BorderFactory.createCompoundBorder(
         BorderFactory.createTitledBorder("Graph"),
@@ -2496,124 +2536,9 @@ attrSelExpTabs.addTab("Results", results);
     private void updateGraphBtnActionPerformed(java.awt.event.ActionEvent evt) {//GEN-FIRST:event_updateGraphBtnActionPerformed
         if(resultsAttrSelExp != null){
             if(!xAxis1ComboBox.getSelectedItem().equals(xAxis2ComboBox.getSelectedItem())){
-                DefaultCategoryDataset result = new DefaultCategoryDataset();
-                String metricSelected = (String)metricGraphComboBox.getSelectedItem();
-                String xAxis1 = (String)xAxis1ComboBox.getSelectedItem();
-                String xAxis2 = (String)xAxis2ComboBox.getSelectedItem();
-                List dataMetrics = new ArrayList();
-
-                try {
-                    switch (metricSelected) {
-                        case "Accuracy":
-                            dataMetrics = accuracy();
-                            break;
-                        case "Precision":
-                            dataMetrics = precision();
-                            break;
-                        case "Recall":
-                            dataMetrics = recall();
-                            break;
-                        case "F-measure":
-                            dataMetrics = fMeasure();
-                            break;
-                        case "Kappa":
-                            dataMetrics = kappa();
-                            break;
-                        case "MCC":
-                            dataMetrics = mcc();
-                            break;
-                        case "AUC":
-                            dataMetrics = auc();
-                            break;
-                        case "MAE":
-                            dataMetrics = mae();
-                            break;
-                        case "MSE":
-                            dataMetrics = mse();
-                            break;
-                        case "RMSE":
-                            dataMetrics = rmse();
-                            break;
-                        case "MAPE":
-                            dataMetrics = mape();
-                            break;
-                        case "R2":
-                            dataMetrics = r2();
-                            break;
-                        default:
-                            break;
-                    }
-                } catch (InterruptedException | ExecutionException ex) {
-                    Logger.getLogger(AttrSelExp.class.getName()).log(Level.SEVERE, null, ex);
-                }
-
-                for(int i = 0; i < dataMetrics.size(); i++){
-                    //if not applicable or an error has occurred
-                    if(dataMetrics.get(i) != null){
-                        try {
-                            if(xAxis1.equals("Dataset") && xAxis2.equals("Search")){
-                                    result.setValue((double)dataMetrics.get(i), 
-                                        (String)metricsTableModel.getValueAt(i, 2), 
-                                        (String)metricsTableModel.getValueAt(i, 0));
-                            } else if(xAxis1.equals("Dataset") && xAxis2.equals("Evaluator")){
-                                    result.setValue((double)dataMetrics.get(i), 
-                                        (String)metricsTableModel.getValueAt(i, 1), 
-                                        (String)metricsTableModel.getValueAt(i, 0));
-                            } else if(xAxis1.equals("Dataset") && xAxis2.equals("Classifier")){
-                                result.setValue((double)dataMetrics.get(i), 
-                                    (String)metricsTableModel.getValueAt(i, 3), 
-                                    (String)metricsTableModel.getValueAt(i, 0));
-                            } else if(xAxis1.equals("Search") && xAxis2.equals("Dataset")){
-                                result.setValue((double)dataMetrics.get(i), 
-                                    (String)metricsTableModel.getValueAt(i, 0),
-                                    (String)metricsTableModel.getValueAt(i, 2));
-                            } else if(xAxis1.equals("Search") && xAxis2.equals("Evaluator")){
-                                result.setValue((double)dataMetrics.get(i), 
-                                    (String)metricsTableModel.getValueAt(i, 1),
-                                    (String)metricsTableModel.getValueAt(i, 2));
-                            } else if(xAxis1.equals("Search") && xAxis2.equals("Classifier")){
-                                result.setValue((double)dataMetrics.get(i), 
-                                    (String)metricsTableModel.getValueAt(i, 3),
-                                    (String)metricsTableModel.getValueAt(i, 2));
-                            } else if(xAxis1.equals("Evaluator") && xAxis2.equals("Dataset")){
-                                result.setValue((double)dataMetrics.get(i), 
-                                    (String)metricsTableModel.getValueAt(i, 0),
-                                    (String)metricsTableModel.getValueAt(i, 1));
-                            } else if(xAxis1.equals("Evaluator") && xAxis2.equals("Search")){
-                                result.setValue((double)dataMetrics.get(i), 
-                                    (String)metricsTableModel.getValueAt(i, 2),
-                                    (String)metricsTableModel.getValueAt(i, 1));
-                            } else if(xAxis1.equals("Evaluator") && xAxis2.equals("Classifier")){
-                                result.setValue((double)dataMetrics.get(i), 
-                                    (String)metricsTableModel.getValueAt(i, 3),
-                                    (String)metricsTableModel.getValueAt(i, 1));
-                            } else if(xAxis1.equals("Classifier") && xAxis2.equals("Dataset")){
-                                result.setValue((double)dataMetrics.get(i), 
-                                    (String)metricsTableModel.getValueAt(i, 0),
-                                    (String)metricsTableModel.getValueAt(i, 3));
-                            } else if(xAxis1.equals("Classifier") && xAxis2.equals("Evaluator")){
-                                result.setValue((double)dataMetrics.get(i), 
-                                    (String)metricsTableModel.getValueAt(i, 1),
-                                    (String)metricsTableModel.getValueAt(i, 3));
-                            } else if(xAxis1.equals("Classifier") && xAxis2.equals("Search")){
-                                result.setValue((double)dataMetrics.get(i), 
-                                    (String)metricsTableModel.getValueAt(i, 2),
-                                    (String)metricsTableModel.getValueAt(i, 3)); 
-                            }   
-                        } catch (Exception ex) {
-                            result.setValue(0, "", "");
-                        }
-                    }
-                }
-
-                chart = ChartFactory.createBarChart(null, xAxis1+"/"+xAxis2, metricSelected,result, PlotOrientation.VERTICAL, true, true, false);
-                CategoryPlot plot = (CategoryPlot) chart.getPlot();
-                plot.setBackgroundAlpha(0.5f);
-                ChartPanel chartPanel = new ChartPanel(chart);
-                barChartPanel.removeAll();
-                barChartPanel.setLayout(new java.awt.BorderLayout());
-                barChartPanel.add(chartPanel);   
-                barChartPanel.validate();
+                updateGraph();
+            }else{
+                m_Log.statusMessage("The value of the axis are same.");
             }
         }
     }//GEN-LAST:event_updateGraphBtnActionPerformed
@@ -3188,9 +3113,9 @@ attrSelExpTabs.addTab("Results", results);
     }//GEN-LAST:event_valueGroupsLOOTextFieldActionPerformed
 
     private void ropeTextFieldActionPerformed(java.awt.event.ActionEvent evt) {//GEN-FIRST:event_ropeTextFieldActionPerformed
-        m_Log.logMessage("Perfoming statistical tests. Please wait...");
-        m_Log.statusMessage("Perfoming statistical tests. Please wait...");
-        messagesStatis.setText("Perfoming statistical tests. Please wait...");
+        m_Log.logMessage("Performing statistical tests. Please wait...");
+        m_Log.statusMessage("Performing statistical tests. Please wait...");
+        messagesStatis.setText("Performing statistical tests. Please wait...");
         
         if(statisticalTestTableModel.getRowCount() > 0){
             statisticalTestTableModel.setRowCount(0);
@@ -3280,6 +3205,415 @@ attrSelExpTabs.addTab("Results", results);
         worker.execute();
     }//GEN-LAST:event_ropeTextFieldActionPerformed
 
+    private void xAxis1ComboBoxItemStateChanged(java.awt.event.ItemEvent evt) {//GEN-FIRST:event_xAxis1ComboBoxItemStateChanged
+        updateFilters();
+    }//GEN-LAST:event_xAxis1ComboBoxItemStateChanged
+
+    private void xAxis2ComboBoxItemStateChanged(java.awt.event.ItemEvent evt) {//GEN-FIRST:event_xAxis2ComboBoxItemStateChanged
+        updateFilters();;
+    }//GEN-LAST:event_xAxis2ComboBoxItemStateChanged
+    private void updateFilters(){
+        String[] dataComboBox;    
+        
+        if(xAxis1ComboBox.getSelectedItem().equals("Dataset") && xAxis2ComboBox.getSelectedItem().equals("Evaluator")){
+            dataComboBox = new String[captionCL.size()];
+        
+            for(int i = 0; i < listClassifier.size(); i++){
+                dataComboBox[i] = findAlgorithms(captionCL, getSpec(listClassifier.get(i)));
+            }
+
+            filterGraph1ComboBox.setModel(new DefaultComboBoxModel(dataComboBox));
+            labelFilter1.setText("Classifier:");
+
+            dataComboBox = new String[captionSE.size()];
+        
+            for(int i = 0; i < listSearchAlgorithms.size(); i++){
+                dataComboBox[i] = findAlgorithms(captionSE, getSpec(listSearchAlgorithms.get(i)));
+            }
+
+            filterGraph2ComboBox.setModel(new DefaultComboBoxModel(dataComboBox));
+            labelFilter2.setText("Search:");
+        }else if(xAxis1ComboBox.getSelectedItem().equals("Dataset") && xAxis2ComboBox.getSelectedItem().equals("Search")){
+            dataComboBox = new String[captionCL.size()];
+        
+            for(int i = 0; i < listClassifier.size(); i++){
+                dataComboBox[i] = findAlgorithms(captionCL, getSpec(listClassifier.get(i)));
+            }
+
+            filterGraph1ComboBox.setModel(new DefaultComboBoxModel(dataComboBox));
+            labelFilter1.setText("Classifier:");
+
+            dataComboBox = new String[captionEV.size()];
+            int i = 0;
+            
+            while(((String)captionTable.getValueAt(i, 0)).contains("E")){
+                dataComboBox[i] = (String)captionTable.getValueAt(i, 0);
+                i++;
+            }
+
+            filterGraph2ComboBox.setModel(new DefaultComboBoxModel(dataComboBox));
+            labelFilter2.setText("Evaluator:");
+        }else if(xAxis1ComboBox.getSelectedItem().equals("Dataset") && xAxis2ComboBox.getSelectedItem().equals("Classifier")){
+            dataComboBox = new String[captionEV.size()+1];
+        
+            int i = 0;
+            
+            while(((String)captionTable.getValueAt(i, 0)).contains("E")){
+                dataComboBox[i] = (String)captionTable.getValueAt(i, 0);
+                i++;
+            }
+
+            dataComboBox[dataComboBox.length-1] = "original";
+            
+            filterGraph1ComboBox.setModel(new DefaultComboBoxModel(dataComboBox));
+            labelFilter1.setText("Evaluator:");
+
+            dataComboBox = new String[captionSE.size()+1];
+        
+            for(i = 0; i < listSearchAlgorithms.size(); i++){
+                dataComboBox[i] = findAlgorithms(captionSE, getSpec(listSearchAlgorithms.get(i)));
+            }
+
+            dataComboBox[dataComboBox.length-1] = "original";
+            
+            filterGraph2ComboBox.setModel(new DefaultComboBoxModel(dataComboBox));
+            labelFilter2.setText("Search:");
+        }else if(xAxis1ComboBox.getSelectedItem().equals("Evaluator") && xAxis2ComboBox.getSelectedItem().equals("Dataset")){
+            dataComboBox = new String[captionCL.size()];
+        
+            for(int i = 0; i < listClassifier.size(); i++){
+                dataComboBox[i] = findAlgorithms(captionCL, getSpec(listClassifier.get(i)));
+            }
+
+            filterGraph1ComboBox.setModel(new DefaultComboBoxModel(dataComboBox));
+            labelFilter1.setText("Classifier:");
+
+            dataComboBox = new String[captionSE.size()];
+        
+            for(int i = 0; i < listSearchAlgorithms.size(); i++){
+                dataComboBox[i] = findAlgorithms(captionSE, getSpec(listSearchAlgorithms.get(i)));
+            }
+
+            filterGraph2ComboBox.setModel(new DefaultComboBoxModel(dataComboBox));
+            labelFilter2.setText("Search:");
+        }else if(xAxis1ComboBox.getSelectedItem().equals("Evaluator") && xAxis2ComboBox.getSelectedItem().equals("Search")){
+            dataComboBox = new String[captionCL.size()];
+        
+            for(int i = 0; i < listClassifier.size(); i++){
+                dataComboBox[i] = findAlgorithms(captionCL, getSpec(listClassifier.get(i)));
+            }
+
+            filterGraph1ComboBox.setModel(new DefaultComboBoxModel(dataComboBox));
+            labelFilter1.setText("Classifier:");
+
+            dataComboBox = new String[listInstances.size()];
+
+            for(int i = 0; i < listInstances.size(); i++){
+                dataComboBox[i] = listInstances.get(i).relationName();
+            }
+
+            filterGraph2ComboBox.setModel(new DefaultComboBoxModel(dataComboBox));
+            labelFilter2.setText("Dataset:");
+        }else if(xAxis1ComboBox.getSelectedItem().equals("Evaluator") && xAxis2ComboBox.getSelectedItem().equals("Classifier")){
+            dataComboBox = new String[captionSE.size()];
+        
+            for(int i = 0; i < listSearchAlgorithms.size(); i++){
+                dataComboBox[i] = findAlgorithms(captionSE, getSpec(listSearchAlgorithms.get(i)));
+            }
+
+            filterGraph1ComboBox.setModel(new DefaultComboBoxModel(dataComboBox));
+            labelFilter1.setText("Search:");
+
+            dataComboBox = new String[listInstances.size()];
+
+            for(int i = 0; i < listInstances.size(); i++){
+                dataComboBox[i] = listInstances.get(i).relationName();
+            }
+
+            filterGraph2ComboBox.setModel(new DefaultComboBoxModel(dataComboBox));
+            labelFilter2.setText("Dataset:");
+        }else if(xAxis1ComboBox.getSelectedItem().equals("Search") && xAxis2ComboBox.getSelectedItem().equals("Dataset")){
+            dataComboBox = new String[captionCL.size()];
+        
+            for(int i = 0; i < listClassifier.size(); i++){
+                dataComboBox[i] = findAlgorithms(captionCL, getSpec(listClassifier.get(i)));
+            }
+
+            filterGraph1ComboBox.setModel(new DefaultComboBoxModel(dataComboBox));
+            labelFilter1.setText("Classifier:");
+
+            dataComboBox = new String[captionEV.size()];
+        
+            int i = 0;
+            
+            while(((String)captionTable.getValueAt(i, 0)).contains("E")){
+                dataComboBox[i] = (String)captionTable.getValueAt(i, 0);
+                i++;
+            }
+
+            filterGraph2ComboBox.setModel(new DefaultComboBoxModel(dataComboBox));
+            labelFilter2.setText("Evaluator:");
+        }else if(xAxis1ComboBox.getSelectedItem().equals("Search") && xAxis2ComboBox.getSelectedItem().equals("Evaluator")){
+            dataComboBox = new String[captionCL.size()];
+        
+            for(int i = 0; i < listClassifier.size(); i++){
+                dataComboBox[i] = findAlgorithms(captionCL, getSpec(listClassifier.get(i)));
+            }
+
+            filterGraph1ComboBox.setModel(new DefaultComboBoxModel(dataComboBox));
+            labelFilter1.setText("Classifier:");
+
+            dataComboBox = new String[listInstances.size()];
+
+            for(int i = 0; i < listInstances.size(); i++){
+                dataComboBox[i] = listInstances.get(i).relationName();
+            }
+
+            filterGraph2ComboBox.setModel(new DefaultComboBoxModel(dataComboBox));
+            labelFilter2.setText("Dataset:");
+        }else if(xAxis1ComboBox.getSelectedItem().equals("Search") && xAxis2ComboBox.getSelectedItem().equals("Classifier")){
+            dataComboBox = new String[captionEV.size()];
+        
+            int i = 0;
+            
+            while(((String)captionTable.getValueAt(i, 0)).contains("E")){
+                dataComboBox[i] = (String)captionTable.getValueAt(i, 0);
+                i++;
+            }
+
+            filterGraph1ComboBox.setModel(new DefaultComboBoxModel(dataComboBox));
+            labelFilter1.setText("Evaluator:");
+
+            dataComboBox = new String[listInstances.size()];
+
+            for(i = 0; i < listInstances.size(); i++){
+                dataComboBox[i] = listInstances.get(i).relationName();
+            }
+
+            filterGraph2ComboBox.setModel(new DefaultComboBoxModel(dataComboBox));
+            labelFilter2.setText("Dataset:");
+        }else if(xAxis1ComboBox.getSelectedItem().equals("Classifier") && xAxis2ComboBox.getSelectedItem().equals("Dataset")){
+            dataComboBox = new String[captionEV.size()+1];
+        
+            int i = 0;
+            
+            while(((String)captionTable.getValueAt(i, 0)).contains("E")){
+                dataComboBox[i] = (String)captionTable.getValueAt(i, 0);
+                i++;
+            }
+
+            dataComboBox[dataComboBox.length-1] = "original";
+            
+            filterGraph1ComboBox.setModel(new DefaultComboBoxModel(dataComboBox));
+            labelFilter1.setText("Evaluator:");
+
+            dataComboBox = new String[captionSE.size()+1];
+        
+            for(i = 0; i < listSearchAlgorithms.size(); i++){
+                dataComboBox[i] = findAlgorithms(captionSE, getSpec(listSearchAlgorithms.get(i)));
+            }
+            
+            dataComboBox[dataComboBox.length-1] = "original";
+
+            filterGraph2ComboBox.setModel(new DefaultComboBoxModel(dataComboBox));
+            labelFilter2.setText("Search:");
+        }else if(xAxis1ComboBox.getSelectedItem().equals("Classifier") && xAxis2ComboBox.getSelectedItem().equals("Search")){
+            dataComboBox = new String[captionEV.size()];
+        
+            int i = 0;
+            
+            while(((String)captionTable.getValueAt(i, 0)).contains("E")){
+                dataComboBox[i] = (String)captionTable.getValueAt(i, 0);
+                i++;
+            }
+
+            filterGraph1ComboBox.setModel(new DefaultComboBoxModel(dataComboBox));
+            labelFilter1.setText("Evaluator:");
+
+            dataComboBox = new String[listInstances.size()];
+
+            for(i = 0; i < listInstances.size(); i++){
+                dataComboBox[i] = listInstances.get(i).relationName();
+            }
+
+            filterGraph2ComboBox.setModel(new DefaultComboBoxModel(dataComboBox));
+            labelFilter2.setText("Dataset:");
+        }else if(xAxis1ComboBox.getSelectedItem().equals("Classifier") && xAxis2ComboBox.getSelectedItem().equals("Evaluator")){
+            dataComboBox = new String[captionSE.size()];
+        
+            for(int i = 0; i < listSearchAlgorithms.size(); i++){
+                dataComboBox[i] = findAlgorithms(captionSE, getSpec(listSearchAlgorithms.get(i)));
+            }
+
+            filterGraph1ComboBox.setModel(new DefaultComboBoxModel(dataComboBox));
+            labelFilter1.setText("Search:");
+
+            dataComboBox = new String[listInstances.size()];
+
+            for(int i = 0; i < listInstances.size(); i++){
+                dataComboBox[i] = listInstances.get(i).relationName();
+            }
+
+            filterGraph2ComboBox.setModel(new DefaultComboBoxModel(dataComboBox));
+            labelFilter2.setText("Dataset:");
+        }
+    }
+    
+    private void updateGraph(){
+        DefaultCategoryDataset result = new DefaultCategoryDataset();
+        String metricSelected = (String)metricGraphComboBox.getSelectedItem();
+        String xAxis1 = (String)xAxis1ComboBox.getSelectedItem();
+        String xAxis2 = (String)xAxis2ComboBox.getSelectedItem();
+        String f1 = labelFilter1.getText() + (String)filterGraph1ComboBox.getSelectedItem();
+        String f2 = labelFilter2.getText() + (String)filterGraph2ComboBox.getSelectedItem();
+        List dataMetrics = new ArrayList();
+        int indexColF1 = 0;
+        int indexColF2 = 0;
+        
+        if(f1.split(":")[0].equals("Classifier")){
+            indexColF1 = 3;
+        }else if(f1.split(":")[0].equals("Evaluator")){
+            indexColF1 = 1;
+        }else if(f1.split(":")[0].equals("Search")){
+            indexColF1 = 2;
+        }
+        
+        if(f2.split(":")[0].equals("Dataset")){
+            indexColF2 = 0;
+        }else if(f2.split(":")[0].equals("Evaluator")){
+            indexColF2 = 1;
+        }else if(f2.split(":")[0].equals("Search")){
+            indexColF2 = 2;
+        }
+
+        f1 = f1.split(":")[1];
+        f2 = f2.split(":")[1];
+                
+        try {
+            switch (metricSelected) {
+                case "Accuracy":
+                    dataMetrics = accuracy();
+                    break;
+                case "Precision":
+                    dataMetrics = precision();
+                    break;
+                case "Recall":
+                    dataMetrics = recall();
+                    break;
+                case "F-measure":
+                    dataMetrics = fMeasure();
+                    break;
+                case "Kappa":
+                    dataMetrics = kappa();
+                    break;
+                case "MCC":
+                    dataMetrics = mcc();
+                    break;
+                case "AUC":
+                    dataMetrics = auc();
+                    break;
+                case "MAE":
+                    dataMetrics = mae();
+                    break;
+                case "MSE":
+                    dataMetrics = mse();
+                    break;
+                case "RMSE":
+                    dataMetrics = rmse();
+                    break;
+                case "MAPE":
+                    dataMetrics = mape();
+                    break;
+                case "R2":
+                    dataMetrics = r2();
+                    break;
+                default:
+                    break;
+            }
+        } catch (InterruptedException | ExecutionException ex) {
+            Logger.getLogger(AttrSelExp.class.getName()).log(Level.SEVERE, null, ex);
+        }
+        
+        if(f1.equals("original") || f2.equals("original")){
+            f1 = "original";
+            filterGraph1ComboBox.setSelectedItem("original");
+            f2 = "original";
+            filterGraph2ComboBox.setSelectedItem("original");
+        }
+
+        for(int i = 0; i < dataMetrics.size(); i++){
+            //if not applicable or an error has occurred
+            if(dataMetrics.get(i) != null){
+                try {
+                    if((metricsTable.getValueAt(i, indexColF1).equals(f1) && metricsTable.getValueAt(i, indexColF2).equals(f2)) || 
+                            (metricsTable.getValueAt(i, 3).equals(f1) && metricsTable.getValueAt(i, 1).equals("original") && indexColF1 != 1 && indexColF2 != 2) ||
+                            (metricsTable.getValueAt(i, 1).equals("original") && metricsTable.getValueAt(i, 2).equals("original") && indexColF1 != 1 && indexColF2 != 2)){
+                        if(xAxis1.equals("Dataset") && xAxis2.equals("Search")){
+                                result.setValue((double)dataMetrics.get(i), 
+                                    (String)metricsTableModel.getValueAt(i, 2), 
+                                    (String)metricsTableModel.getValueAt(i, 0));
+                        } else if(xAxis1.equals("Dataset") && xAxis2.equals("Evaluator")){
+                                result.setValue((double)dataMetrics.get(i), 
+                                    (String)metricsTableModel.getValueAt(i, 1), 
+                                    (String)metricsTableModel.getValueAt(i, 0));
+                        } else if(xAxis1.equals("Dataset") && xAxis2.equals("Classifier")){
+                            result.setValue((double)dataMetrics.get(i), 
+                                (String)metricsTableModel.getValueAt(i, 3), 
+                                (String)metricsTableModel.getValueAt(i, 0));
+                        } else if(xAxis1.equals("Search") && xAxis2.equals("Dataset")){
+                            result.setValue((double)dataMetrics.get(i), 
+                                (String)metricsTableModel.getValueAt(i, 0),
+                                (String)metricsTableModel.getValueAt(i, 2));
+                        } else if(xAxis1.equals("Search") && xAxis2.equals("Evaluator")){
+                            result.setValue((double)dataMetrics.get(i), 
+                                (String)metricsTableModel.getValueAt(i, 1),
+                                (String)metricsTableModel.getValueAt(i, 2));
+                        } else if(xAxis1.equals("Search") && xAxis2.equals("Classifier")){
+                            result.setValue((double)dataMetrics.get(i), 
+                                (String)metricsTableModel.getValueAt(i, 3),
+                                (String)metricsTableModel.getValueAt(i, 2));
+                        } else if(xAxis1.equals("Evaluator") && xAxis2.equals("Dataset")){
+                            result.setValue((double)dataMetrics.get(i), 
+                                (String)metricsTableModel.getValueAt(i, 0),
+                                (String)metricsTableModel.getValueAt(i, 1));
+                        } else if(xAxis1.equals("Evaluator") && xAxis2.equals("Search")){
+                            result.setValue((double)dataMetrics.get(i), 
+                                (String)metricsTableModel.getValueAt(i, 2),
+                                (String)metricsTableModel.getValueAt(i, 1));
+                        } else if(xAxis1.equals("Evaluator") && xAxis2.equals("Classifier")){
+                            result.setValue((double)dataMetrics.get(i), 
+                                (String)metricsTableModel.getValueAt(i, 3),
+                                (String)metricsTableModel.getValueAt(i, 1));
+                        } else if(xAxis1.equals("Classifier") && xAxis2.equals("Dataset")){
+                            result.setValue((double)dataMetrics.get(i), 
+                                (String)metricsTableModel.getValueAt(i, 0),
+                                (String)metricsTableModel.getValueAt(i, 3));
+                        } else if(xAxis1.equals("Classifier") && xAxis2.equals("Evaluator")){
+                            result.setValue((double)dataMetrics.get(i), 
+                                (String)metricsTableModel.getValueAt(i, 1),
+                                (String)metricsTableModel.getValueAt(i, 3));
+                        } else if(xAxis1.equals("Classifier") && xAxis2.equals("Search")){
+                            result.setValue((double)dataMetrics.get(i), 
+                                (String)metricsTableModel.getValueAt(i, 2),
+                                (String)metricsTableModel.getValueAt(i, 3)); 
+                        }   
+                    }
+                } catch (Exception ex) {
+                    result.setValue(0, "", "");
+                }
+            }
+        }
+
+        chart = ChartFactory.createBarChart(null, xAxis1+"/"+xAxis2, metricSelected,result, PlotOrientation.VERTICAL, true, true, false);
+        CategoryPlot plot = (CategoryPlot) chart.getPlot();
+        plot.setBackgroundAlpha(0.5f);
+        ChartPanel chartPanel = new ChartPanel(chart);
+        barChartPanel.removeAll();
+        barChartPanel.setLayout(new java.awt.BorderLayout());
+        barChartPanel.add(chartPanel);   
+        barChartPanel.validate();
+    }
+    
     private void bayesianComparator(List metrics){
         try {
             String contentFile = convertListMetricsToString(metrics);
@@ -5321,6 +5655,24 @@ attrSelExpTabs.addTab("Results", results);
         xAxis1ComboBox.setSelectedIndex(1);
         xAxis2ComboBox.setSelectedIndex(2);
         
+        dataComboBox = new String[captionCL.size()];
+        
+        for(int i = 0; i < listClassifier.size(); i++){
+            dataComboBox[i] = findAlgorithms(captionCL, getSpec(listClassifier.get(i)));
+        }
+        
+        filterGraph1ComboBox.setModel(new DefaultComboBoxModel(dataComboBox));
+        labelFilter1.setText("Classifier:");
+        
+        dataComboBox = new String[listInstances.size()];
+        
+        for(int i = 0; i < listInstances.size(); i++){
+            dataComboBox[i] = listInstances.get(i).relationName();
+        }
+        
+        filterGraph2ComboBox.setModel(new DefaultComboBoxModel(dataComboBox));
+        labelFilter2.setText("Dataset:");
+        
         if(listInstances.get(0).classAttribute().isNominal()){
             metricGraphComboBox.setSelectedIndex(0);
         }else{
@@ -7281,6 +7633,8 @@ attrSelExpTabs.addTab("Results", results);
     private javax.swing.JScrollPane featureScrollPane;
     private javax.swing.JPanel featureSelection;
     private javax.swing.JTable featuresTable;
+    private javax.swing.JComboBox<String> filterGraph1ComboBox;
+    private javax.swing.JComboBox<String> filterGraph2ComboBox;
     private javax.swing.JComboBox<String> filterStatisComboBox;
     private javax.swing.JLabel filterStatisLabel;
     private javax.swing.JPanel graph;
@@ -7290,6 +7644,8 @@ attrSelExpTabs.addTab("Results", results);
     private javax.swing.JTextField holdOutSplitTextField;
     private javax.swing.JPanel jPanel2;
     private javax.swing.JCheckBox kappaMetricsCheckBox;
+    private javax.swing.JLabel labelFilter1;
+    private javax.swing.JLabel labelFilter2;
     private javax.swing.JRadioButton leaveOneOutBtn;
     private javax.swing.JButton loadBBDDBtn;
     private javax.swing.JButton loadBtnClassifier;
