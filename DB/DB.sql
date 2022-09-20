@@ -86,8 +86,8 @@ CREATE TABLE `metrics` (
 CREATE TABLE `predictions` (
   `id` int(11) NOT NULL,
   `idexperiment` int(11) NOT NULL,
-  `actual_value` double NOT NULL,
-  `predicted_value` double NOT NULL,
+  `actual` double NOT NULL,
+  `predicted` double NOT NULL,
   `dataset` text COLLATE utf8_spanish_ci NOT NULL,
   `evaluator` text COLLATE utf8_spanish_ci NOT NULL,
   `search` text COLLATE utf8_spanish_ci NOT NULL,

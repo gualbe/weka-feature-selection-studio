@@ -6665,14 +6665,20 @@ attrSelExpTabs.addTab("Results", results);
     
     private void existBBDD(){
         Properties p = new Properties();
+        String dir = System.getProperty("user.home");
+        String fileSeparator = File.separator;
         
         try {
-            p.load(new FileReader("C:/Users/Usuario/wekafiles/packages/FS-Studio/DatabaseUtils.props"));
+            if(fileSeparator.equals("\\")){
+                p.load(new FileReader( dir + "\\wekafiles\\packages\\FS-Studio\\DatabaseUtils.props"));
+            }else{
+                p.load(new FileReader( dir + "/wekafiles/packages/FS-Studio/DatabaseUtils.props"));
+            }
         } catch (IOException ex) {
             m_Log.logMessage("The properties file cannot be read");
             m_Log.statusMessage("See error log");
         }
-        
+
         String driver = p.getProperty("jdbcDriver");
         
         try {
@@ -6695,7 +6701,14 @@ attrSelExpTabs.addTab("Results", results);
                 ResultSet rs = st.executeQuery("SELECT * FROM attrselexp.experiment_group");
             } catch (SQLException sqle) { 
                 ScriptRunner runner = new ScriptRunner(conn, false, false);
-                String file = "C:/Users/Usuario/wekafiles/packages/FS-Studio/DB/DB.sql";
+                String file;
+                
+                if(fileSeparator.equals("\\")){
+                    file =  dir + "\\wekafiles\\packages\\FS-Studio\\DB\\DB.sql";
+                }else{
+                    file =  dir + "/wekafiles/packages/FS-Studio/DB/DB.sql";
+                }
+                
                 try {
                     runner.runScript(new BufferedReader(new FileReader(file)));
                 } catch (IOException ex) {
@@ -6712,9 +6725,15 @@ attrSelExpTabs.addTab("Results", results);
         if(resultsAttrSelExp != null){
             existBBDD();
             Properties p = new Properties();
+            String dir = System.getProperty("user.home");
+            String fileSeparator = File.separator;
 
             try {
-                p.load(new FileReader("C:/Users/Usuario/wekafiles/packages/FS-Studio/DatabaseUtils.props"));
+                if(fileSeparator.equals("\\")){
+                    p.load(new FileReader( dir + "\\wekafiles\\packages\\FS-Studio\\DatabaseUtils.props"));
+                }else{
+                    p.load(new FileReader( dir + "/wekafiles/packages/FS-Studio/DatabaseUtils.props"));
+                }
             } catch (IOException ex) {
                 m_Log.logMessage("The properties file cannot be read");
                 m_Log.statusMessage("See error log");
@@ -6744,7 +6763,13 @@ attrSelExpTabs.addTab("Results", results);
                         st.executeUpdate("INSERT INTO experiment_group (datetime) VALUES ('"+dtf.format(LocalDateTime.now())+"')");
                     } catch(Exception ex){
                         ScriptRunner runner = new ScriptRunner(conn, false, false);
-                        String file = "C:/Users/Usuario/wekafiles/packages/FS-Studio/DB/experiment_group.sql";
+                        String file;
+                        
+                        if(fileSeparator.equals("\\")){
+                            file =  dir + "\\wekafiles\\packages\\FS-Studio\\DB\\experiment_group.sql";
+                        }else{
+                            file =  dir + "/wekafiles/packages/FS-Studio/DB/experiment_group.sql";
+                        }
                         
                         try {
                             runner.runScript(new BufferedReader(new FileReader(file)));
@@ -6811,7 +6836,14 @@ attrSelExpTabs.addTab("Results", results);
                             + "VALUES ('"+id+"','"+dt+"','"+eval+"','"+search+"','"+cls+"')");
                         } catch(Exception ex){
                             ScriptRunner runner = new ScriptRunner(conn, false, false);
-                            String file = "C:/Users/Usuario/wekafiles/packages/FS-Studio/DB/experiment.sql";
+                            String file;
+                            
+                            if(fileSeparator.equals("\\")){
+                                file =  dir + "\\wekafiles\\packages\\FS-Studio\\DB\\experiment.sql";
+                            }else{
+                                file =  dir + "/wekafiles/packages/FS-Studio/DB/experiment.sql";
+                            }
+                            
                             try {
                                 runner.runScript(new BufferedReader(new FileReader(file)));
                                 
@@ -6837,7 +6869,14 @@ attrSelExpTabs.addTab("Results", results);
                                     "','"+mape.get(i)+"','"+r2.get(i)+"')");
                         } catch(Exception ex){
                             ScriptRunner runner = new ScriptRunner(conn, false, false);
-                            String file = "C:/Users/Usuario/wekafiles/packages/FS-Studio/DB/metrics.sql";
+                            String file;
+                            
+                            if(fileSeparator.equals("\\")){
+                                file =  dir + "\\wekafiles\\packages\\FS-Studio\\DB\\metrics.sql";
+                            }else{
+                                file =  dir + "/wekafiles/packages/FS-Studio/DB/metrics.sql";
+                            }
+                            
                             try {
                                 runner.runScript(new BufferedReader(new FileReader(file)));
                                 
@@ -6922,7 +6961,14 @@ attrSelExpTabs.addTab("Results", results);
                                         + "VALUES ('"+idExp+"','"+valuesPredict.get(z).actual()+"','"+valuesPredict.get(z).predicted()+"','"+dt+"','"+eval+"','"+search+"','"+cls+"','"+data.get(z)+"','"+dataIndexAttrSel.get(z)+"')");
                                     } catch(Exception ex){
                                         ScriptRunner runner = new ScriptRunner(conn, false, false);
-                                        String file = "C:/Users/Usuario/wekafiles/packages/FS-Studio/DB/predictions.sql";
+                                        String file;
+                                        
+                                        if(fileSeparator.equals("\\")){
+                                            file =  dir + "\\wekafiles\\packages\\FS-Studio\\DB\\predictions.sql";
+                                        }else{
+                                            file =  dir + "/wekafiles/packages/FS-Studio/DB/predictions.sql";
+                                        }
+                                        
                                         try {
                                             runner.runScript(new BufferedReader(new FileReader(file)));
 
@@ -6942,7 +6988,14 @@ attrSelExpTabs.addTab("Results", results);
                                         + "VALUES ('"+idExp+"','"+valuesPredict.get(z).actual()+"','"+valuesPredict.get(z).predicted()+"','"+dt+"','"+eval+"','"+search+"','"+cls+"')");
                                     } catch(Exception ex){
                                         ScriptRunner runner = new ScriptRunner(conn, false, false);
-                                        String file = "C:/Users/Usuario/wekafiles/packages/FS-Studio/DB/predictions.sql";
+                                        String file;
+                                        
+                                        if(fileSeparator.equals("\\")){
+                                            file =  dir + "\\wekafiles\\packages\\FS-Studio\\DB\\predictions.sql";
+                                        }else{
+                                            file =  dir + "/wekafiles/packages/FS-Studio/DB/predictions.sql";
+                                        }
+                                        
                                         try {
                                             runner.runScript(new BufferedReader(new FileReader(file)));
 
@@ -6978,10 +7031,16 @@ attrSelExpTabs.addTab("Results", results);
     
     private void loadBBDD(){
         Properties p = new Properties();
-        
+        String dir = System.getProperty("user.home");
+        String fileSeparator = File.separator;
+
         try {
-            p.load(new FileReader("C:/Users/Usuario/wekafiles/packages/FS-Studio/DatabaseUtils.props"));
-        } catch (IOException ex) {
+            if(fileSeparator.equals("\\")){
+                p.load(new FileReader( dir + "\\wekafiles\\packages\\FS-Studio\\DatabaseUtils.props"));
+            }else{
+                p.load(new FileReader( dir + "/wekafiles/packages/FS-Studio/DatabaseUtils.props"));
+            }
+        }  catch (IOException ex) {
             m_Log.logMessage("The properties file cannot be read");
             m_Log.statusMessage("See error log");
         }
